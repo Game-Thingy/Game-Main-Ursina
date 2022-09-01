@@ -134,10 +134,12 @@ def checkStrength(block, blockthere):
 
 def blockPay(block):
     if block.name == 'ore':
-        print('Added Moolaa')
+        print('Added Moola')
 
 
-
+def update():
+    if player.y <= -9:
+        camera.position = Vec3(-5, -10, -35)
 
 app.run()
 
