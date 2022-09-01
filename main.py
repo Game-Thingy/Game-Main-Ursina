@@ -134,7 +134,7 @@ def checkStrength(block, blockthere):
 
 def blockPay(block):
     if block.name == 'ore':
-        print('Added Moola')
+        print('Added Moolaaa')
 
 
 
