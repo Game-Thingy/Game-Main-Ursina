@@ -33,7 +33,7 @@ class Player(Entity):
         super().__init__()
         self.model = 'cube'
         self.scale = Vec3(1, 1, 0)
-        self.texture = 'white_cube'
+        self.texture = 'assets/PlayerSprite'
         self.position = Vec3(-9, 1, -.1)
         self.origin_x = 0
         self.origin_y = 0
@@ -71,7 +71,7 @@ class Wall(Entity):
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.strength = 0
-        self.texture = "brick"
+        self.texture = "assets/StoneSprite"
 
 class Ore(Entity):
     def __init__(self, x = 0, y = 0):
@@ -82,7 +82,7 @@ class Ore(Entity):
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.strength = 1
-        self.color = color.blue
+        self.texture = "assets/OreSprite"
 
 class Iron(Entity):
     def __init__(self, x = 0, y = 0):
@@ -158,7 +158,6 @@ generateBlocks(-50, 50, 100, 40, 3, 2, 1) #Generates Stone, Ore, Iron, and Gold 
 def checkblock(self, movement):
     for block in tiles:
         if player.x == block.x and player.y == block.y +1 and movement == "down":
-            
             checkStrength(block, movement)
             print('Block Below!')
             break
@@ -173,10 +172,8 @@ def checkblock(self, movement):
 
 def checkblank(self, movement):
         for block in removedTiles:
-            #print(block.x, block.y)
             if player.x == block.x and player.y == block.y +1 and movement == "down":
                 print('Can Move Back')
-                
                 break
             elif player.y == block.y and player.x == block.x +1 and movement == "left":
                 player.x -=1
@@ -194,13 +191,10 @@ def checkStrength(block, movement):
         print(block.color)
         player.y -=1
         player.moves -= 1
-        
         blockPay(block)
         print(block.name + ' Block Breakable')
         tiles.remove(block)
-        
     elif player.strength >= block.strength and movement == "left":
-
         block.visible = False
         player.x -=1
         player.moves -= 1
