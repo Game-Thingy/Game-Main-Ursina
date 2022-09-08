@@ -218,14 +218,13 @@ def blockPay(block):
     
     if block.name == 'ore':
         print('Added Moola')
-        score = updateScore(5)
+        updateScore(5)
         ui.text = 'Score: '  + str(score)
 
         
 def updateScore(oreprice):
     global score
-    score = score + oreprice
-    return score
+    score += oreprice
 
     
 
