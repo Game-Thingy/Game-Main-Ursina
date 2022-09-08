@@ -12,6 +12,12 @@ mapy = 100
 canMove = True
 
 score = 0
+class Gui(Button):
+    def __init__(self):
+        super().__init__()
+        self.text = 'Button'
+        self.visible = False
+
 class UI(Text):
     def __init__(self):
         super().__init__()
@@ -46,10 +52,13 @@ class Player(Entity):
             if self.moves >= 1:
                 if keys == 'd':
                     checkblock(self, movement = "right")
+                    checkblank(self,movement = "right")
                 if keys == 'a':
                     checkblock(self, movement = "left")
+                    checkblank(self, movement= "left")
                 if keys == 's':
                     checkblock(self, movement = "down")
+                    checkblank(self, movement= "down")
 
 
 
@@ -96,7 +105,7 @@ class Gold(Entity):
         self.z = 0
         self.strength = 3
         self.color = color.yellow
-
+gui = Gui()
 player = Player()
 ui = UI()
 ui.position = Vec3(-.8,.45,0)
@@ -111,6 +120,10 @@ tiles =[
 
 
 ]
+removedTiles = [
+
+]
+
 
 # Generation function. Call the function with the below variables and it will generate the mine.
 # If you don't want a tile to generate set weight as 0. You need all the weights of
@@ -145,37 +158,64 @@ generateBlocks(-50, 50, 100, 40, 3, 2, 1) #Generates Stone, Ore, Iron, and Gold 
 def checkblock(self, movement):
     for block in tiles:
         if player.x == block.x and player.y == block.y +1 and movement == "down":
+            
             checkStrength(block, movement)
             print('Block Below!')
             break
-        if player.y == block.y and player.x == block.x +1 and movement == "left":
+        elif player.y == block.y and player.x == block.x +1 and movement == "left":
             checkStrength(block, movement)
             print('Block Left!')
             break
-        if player.y == block.y and player.x == block.x -1 and movement == "right":
+        elif player.y == block.y and player.x == block.x -1 and movement == "right":
             checkStrength(block, movement)
             print('Block Right!')
             break
 
+def checkblank(self, movement):
+        for block in removedTiles:
+            #print(block.x, block.y)
+            if player.x == block.x and player.y == block.y +1 and movement == "down":
+                print('Can Move Back')
+                
+                break
+            elif player.y == block.y and player.x == block.x +1 and movement == "left":
+                player.x -=1
+                print('Can Move Left!')
+                break
+            elif player.y == block.y and player.x == block.x -1 and movement == "right":
+                player.x += 1
+                print('Can Move Right!')
+                break
+   
 def checkStrength(block, movement):
     if player.strength >= block.strength and movement == "down":
-        block.position = Vec3(0,0,0)
+        removedTiles.append(block)
+        block.visible = False
+        print(block.color)
         player.y -=1
         player.moves -= 1
+        
         blockPay(block)
         print(block.name + ' Block Breakable')
+        tiles.remove(block)
+        
     elif player.strength >= block.strength and movement == "left":
-        block.position = Vec3(0,0,0)
+
+        block.visible = False
         player.x -=1
         player.moves -= 1
         blockPay(block)
+        tiles.remove(block)
+        removedTiles.append(block)
         print(block.name + ' Block Breakable')
     elif player.strength >= block.strength and movement == "right":
-        block.position = Vec3(0,0,0)
+        block.visible = False
         player.x +=1
         player.moves -= 1
         blockPay(block)
         print(block.name + ' Block Breakable')
+        tiles.remove(block)
+        removedTiles.append(block)
     else:
         print("Can't Break That")
 
@@ -192,6 +232,7 @@ def updateScore(oreprice):
     global score
     score = score + oreprice
     return score
+
     
 
 # Updates the Camera Position if the Players position is Equal 
@@ -200,6 +241,7 @@ def updateScore(oreprice):
 def update():
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
+    
 
 # Need to add Gravity some how? Just check if there is a tile under the player
 # and move them down a tile if not every 1 frame? Or maybe a bit more delay for
