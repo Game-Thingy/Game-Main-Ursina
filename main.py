@@ -7,10 +7,20 @@ window.exit_button.visible = False
 window.borderless = False
 camera.position = Vec3(-5, -5, -35)
 
-
 mapx = 10
 mapy = 10
 canMove = True
+
+score = 0
+class UI(Text):
+    def __init__(self):
+        super().__init__()
+        self.text  = 'Score: ' + str(score)
+        self.color = color.black
+        
+        
+        
+        
 
 class Player(Entity):
     def __init__(self, **kwargs):
@@ -45,6 +55,9 @@ class Player(Entity):
                     checkblock(self)
 
                     self.moves -= 1
+                    
+  
+                    
 
 
 
@@ -82,7 +95,8 @@ class Iron(Entity):
         self.color = color.red
 
 player = Player()
-
+ui = UI()
+ui.position = Vec3(-.8,.45,0)
 blocks = [
     'wall1',
     'ore',
@@ -133,13 +147,33 @@ def checkStrength(block, blockthere):
         print(block.name)
 
 def blockPay(block):
+    global score
+    
     if block.name == 'ore':
         print('Added Moola')
+        score = updateScore(5)
+        ui.text = 'Score: '  + str(score)
+
+        
+def updateScore(oreprice):
+    global score
+    score = score + oreprice
+    return score
+    
 
 
 def update():
+    
+    
+    
     if player.y <= -9:
         camera.position = Vec3(-5, -10, -35)
+      
+
+
+    
+
+        
+        
 
 app.run()
-
