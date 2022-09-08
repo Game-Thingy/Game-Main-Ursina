@@ -112,56 +112,6 @@ tiles =[
 
 ]
 
-# Old Mine Generation code. Now all done with a single function
-# instead of a line of if/else if statements
-# def generateBlocks():
-#     posx = 0
-#     posy = 0
-#     for x in range(mapy):
-#         posx = 0
-#         for y in range(mapx):
-#             if x in range(0,5):
-#                 y = Wall(posx, posy)
-#                 tiles.append(y)
-
-#             elif x in range(5,25):
-#                 randint = random.choices(blocks, weights=[50, 2, 0, 0])
-#                 if randint == ['wall1']:
-#                     y = Wall(posx, posy)
-#                     tiles.append(y)
-#                 elif randint == ['ore']:
-#                     y = Ore(posx, posy)
-#                     tiles.append(y)
-
-#             elif x in range(25,50):
-#                 randint = random.choices(blocks, weights=[50, 2, 1, 0])
-#                 if randint == ['wall1']:
-#                     y = Wall(posx, posy)
-#                     tiles.append(y)
-#                 elif randint == ['ore']:
-#                     y = Ore(posx, posy)
-#                     tiles.append(y)
-#                 elif randint == ['iron']:
-#                     y = Iron(posx,posy)
-#                     tiles.append(y)
-
-#             elif x in range(50,100):
-#                 randint = random.choices(blocks, weights=[50, 3, 2, 1])
-#                 if randint == ['wall1']:
-#                     y = Wall(posx, posy)
-#                     tiles.append(y)
-#                 elif randint == ['ore']:
-#                     y = Ore(posx, posy)
-#                     tiles.append(y)
-#                 elif randint == ['iron']:
-#                     y = Iron(posx,posy)
-#                     tiles.append(y)
-#                 elif randint == ['gold']:
-#                     y = Gold(posx,posy)
-#                     tiles.append(y)
-#             posx -= 1
-#         posy -= 1
-
 # Generation function. Call the function with the below variables and it will generate the mine.
 # If you don't want a tile to generate set weight as 0. You need all the weights of
 # all tiles for this to work.
