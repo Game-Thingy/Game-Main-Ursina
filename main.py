@@ -71,7 +71,7 @@ class Player(Entity):
         self.position = Vec3(-9, 1, -.1)
         self.origin_x = 0
         self.origin_y = 0
-        self.moves = 100
+        self.moves = 1000
         self.strength = 1
 
 
@@ -225,6 +225,7 @@ generateBlocks(0, 0, 5, 40, 0, 0, 0) #Generates Stone. Y Levels 0-5
 generateBlocks(-5, 5, 25, 40, 2, 0, 0) #Generates Stone and Ore Mix. Y Levels 5-25
 generateBlocks(-25, 25, 50, 40, 2, 1, 0) #Generates Stone, Ore, and Iron Mix. Y Levels 25-50 
 generateBlocks(-50, 50, 100, 40, 3, 2, 1) #Generates Stone, Ore, Iron, and Gold Mix. Y Levels 50-100
+generationStage = 100
 
 def checkblock(self, movement):
     for block in tiles:
@@ -259,7 +260,6 @@ def checkStrength(block, movement):
     if player.strength >= block.strength and movement == "down":
         removedTiles.append(block)
         block.visible = False
-        print(block.color)
         player.y -=1
         player.moves -= 1
         blockPay(block)
@@ -305,9 +305,18 @@ def updateScore(oreprice):
 
 def update():
     ui2.text = 'Moves: ' + str(player.moves)
+    global generationStage
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
-    
+    if player.y <= -50 and generationStage in range(100,150):
+        generateBlocks(-generationStage, generationStage, generationStage + 1, 10, 3, 2, 1)
+        generationStage += 1
+        print(f"Did the Thing {generationStage}")
+    if player.y <= -100 and generationStage in range(150,200):
+        generateBlocks(-generationStage, generationStage, generationStage + 1, 5, 10, 2, 1)
+        generationStage += 1
+        print(f"Did the Thing v2 {generationStage}")
+        
 
 # Need to add Gravity some how? Just check if there is a tile under the player
 # and move them down a tile if not every 1 frame? Or maybe a bit more delay for
