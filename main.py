@@ -1,3 +1,5 @@
+from turtle import Turtle
+from unicodedata import name
 from ursina import *
 import random
 app = Ursina()
@@ -10,20 +12,52 @@ camera.position = Vec3(-5, -3, -35)
 mapx = 10
 mapy = 100
 canMove = True
-
 score = 0
+class Tool(Entity):
+    def __init__(self):
+        super().__init__()
+        self.model = 'cube'
+        self.scale = Vec3(.08, .08, 0)
+        self.texture = 'assets/PlayerSprite'
+        self.position = Vec2(-.8,-.4)
+        self.toolStrenth = 1
+        self.parent = camera.ui
+
 class Gui(Button):
     def __init__(self):
         super().__init__()
-        self.text = 'Button'
+        global canMove
+        self.scale = (.5,.25)
         self.visible = False
+        self.disabled = True
+        self.color = color.white
+        
+
+    def input(self, keys):
+        global canMove
+        if keys == 'tab':
+            if self.visible == False:
+                self.disabled = False
+                for x in removedTiles:
+                    print(x)
+                self.visible = True
+                canMove = False
+            else:
+                self.visible = False
+                self.disabled = True
+                canMove = True
+
+                
+  
+
 
 class UI(Text):
     def __init__(self):
         super().__init__()
         self.text  = 'Score: ' + str(score)
         self.color = color.black
-        
+
+
         
         
         
@@ -48,6 +82,7 @@ class Player(Entity):
             setattr(self, key, value)
 
     def input(self, keys):
+            
         if canMove:
             if self.moves >= 1:
                 if keys == 'd':
@@ -59,6 +94,9 @@ class Player(Entity):
                 if keys == 's':
                     checkblock(self, movement = "down")
                     checkblank(self, movement= "down")
+            
+        
+
 
 
 
@@ -105,10 +143,43 @@ class Gold(Entity):
         self.z = 0
         self.strength = 3
         self.color = color.yellow
+#Pause Menu
+def inStore():
+    print("You are in the store")
+    gui.disabled = True
+    gui.visible = False
+    gui2.disabled = True
+    gui2.visible = False
+    store.disabled = True
+    store.visible = False
+
+
 gui = Gui()
+gui.on_click = application.quit
+gui.texture = 'assets/Exit_Button'
+gui.position = (0,.0)
+gui2 = Gui()
+gui2.texture = 'assets/Continue_Button'
+gui2.position = (0,.25)
+store = Gui()
+store.text = 'Store'
+store.position = (0, -.25)
+store.on_click = inStore
+
+
+
+
+
+
+
+
 player = Player()
+tool = Tool()
 ui = UI()
 ui.position = Vec3(-.8,.45,0)
+ui2 = UI()
+ui2.position = Vec3(-.5,.45, 0)
+
 blocks = [
     'wall1',
     'ore',
@@ -226,12 +297,14 @@ def updateScore(oreprice):
     global score
     score += oreprice
 
-    
+
+
 
 # Updates the Camera Position if the Players position is Equal 
 # (And less than just incase) so it keeps them at the center of the screen.
 
 def update():
+    ui2.text = 'Moves: ' + str(player.moves)
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
     
