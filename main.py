@@ -1,7 +1,8 @@
-from turtle import Turtle
+
 from unicodedata import name
 from ursina import *
 import random
+from ursina import Ursina, ButtonGroup
 app = Ursina()
 # Window Setup
 window.fps_counter.enabled = False
@@ -156,6 +157,7 @@ def inStore():
 
 gui = Gui()
 gui.on_click = application.quit
+
 gui.texture = 'assets/Exit_Button'
 gui.position = (0,.0)
 gui2 = Gui()
@@ -166,13 +168,29 @@ store.text = 'Store'
 store.position = (0, -.25)
 store.on_click = inStore
 
+wp = WindowPanel(
+    title='Custom Window',
+    content=(
+        
+        Text('Name:'),
+        InputField(name='name_field'),
+        Button(text='Submit', color=color.azure, on_click= inStore),
+        Slider(),
+        Slider(),
+        ButtonGroup(('box', 'eslk', 'skffk'))
+        ),
+    )
+wp.x = -.5
+wp.visible = False
+wp.disabled = True
+#print(wp.content[5].value)
 
 
 
 
 
 
-
+ 
 player = Player()
 tool = Tool()
 ui = UI()
@@ -228,9 +246,12 @@ generateBlocks(-50, 50, 100, 40, 3, 2, 1) #Generates Stone, Ore, Iron, and Gold 
 generationStage = 100
 
 def checkblock(self, movement):
+    
     for block in tiles:
         if player.x == block.x and player.y == block.y +1 and movement == "down":
             checkStrength(block, movement)
+
+            
             print('Block Below!')
             break
         elif player.y == block.y and player.x == block.x +1 and movement == "left":
@@ -274,6 +295,7 @@ def checkStrength(block, movement):
         removedTiles.append(block)
         print(block.name + ' Block Breakable')
     elif player.strength >= block.strength and movement == "right":
+        
         block.visible = False
         player.x +=1
         player.moves -= 1
@@ -283,6 +305,13 @@ def checkStrength(block, movement):
         removedTiles.append(block)
     else:
         print("Can't Break That")
+        tip =Tooltip('Can\'t Break this')
+        tip.parent = player
+        tip.position = (0,1,-1)
+        tip.scale = 10
+        tip.fade_out(duration=1)
+        tip.background.fade_out(duration=1)
+        
 
 def blockPay(block):
     global score
@@ -305,6 +334,8 @@ def updateScore(oreprice):
 
 def update():
     ui2.text = 'Moves: ' + str(player.moves)
+    
+    wp.stop_dragging()
     global generationStage
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
