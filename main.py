@@ -1,14 +1,22 @@
 
+from ctypes import alignment
+from email.policy import default
+from msilib import sequence
+from turtle import back, onclick
 from unicodedata import name
 from ursina import *
 import random
 from ursina import Ursina, ButtonGroup
+import asyncio
 app = Ursina()
 # Window Setup
 window.fps_counter.enabled = False
 window.exit_button.visible = False
 window.borderless = False
 camera.position = Vec3(-5, -3, -35)
+
+
+
 
 mapx = 10
 mapy = 100
@@ -24,44 +32,13 @@ class Tool(Entity):
         self.toolStrenth = 1
         self.parent = camera.ui
 
-class Gui(Button):
-    def __init__(self):
-        super().__init__()
-        global canMove
-        self.scale = (.5,.25)
-        self.visible = False
-        self.disabled = True
-        self.color = color.white
-        
-
-    def input(self, keys):
-        global canMove
-        if keys == 'tab':
-            if self.visible == False:
-                self.disabled = False
-                for x in removedTiles:
-                    print(x)
-                self.visible = True
-                canMove = False
-            else:
-                self.visible = False
-                self.disabled = True
-                canMove = True
-
-                
-  
-
 
 class UI(Text):
     def __init__(self):
         super().__init__()
         self.text  = 'Score: ' + str(score)
-        self.color = color.black
+        self.color = color.white
 
-
-        
-        
-        
 
 class Player(Entity):
     def __init__(self, **kwargs):
@@ -74,10 +51,6 @@ class Player(Entity):
         self.origin_y = 0
         self.moves = 1000
         self.strength = 1
-
-
-
-
         self.disMove = Text(text=self.moves, wordwrap=30)
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -96,10 +69,15 @@ class Player(Entity):
                     checkblock(self, movement = "down")
                     checkblank(self, movement= "down")
             
-        
-
-
-
+class Background(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model= 'cube'
+        self.texture = 'background_level1'
+        self.scale= Vec3(10,10,0)
+        self.z = 5
 
 class Wall(Entity):
     def __init__(self, x = 0, y = 0):
@@ -122,6 +100,7 @@ class Ore(Entity):
         self.z = 0
         self.strength = 1
         self.texture = "assets/OreSprite"
+        self.price = 5
 
 class Iron(Entity):
     def __init__(self, x = 0, y = 0):
@@ -129,10 +108,11 @@ class Iron(Entity):
         self.x = x
         self.y = y
         self.model = 'cube'
+        self.texture = 'assets/iron_ore'
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.strength = 2
-        self.color = color.red
+        self.price = 10
 
 class Gold(Entity):
     def __init__(self, x = 0, y = 0):
@@ -143,54 +123,125 @@ class Gold(Entity):
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.strength = 3
-        self.color = color.yellow
+        self.texture = 'assets/gold_ore'
+        self.price = 25
 #Pause Menu
+
 def inStore():
     print("You are in the store")
-    gui.disabled = True
-    gui.visible = False
-    gui2.disabled = True
-    gui2.visible = False
-    store.disabled = True
-    store.visible = False
+    disableButton(menu)
+    enableButton(wp)
 
+def disableButton(disButton):
+    disButton.enabled = False
+    disButton.visible = False
 
-gui = Gui()
-gui.on_click = application.quit
+def enableButton(enButton):
+    enButton.enabled = True
+    enButton.visible = True
 
-gui.texture = 'assets/Exit_Button'
-gui.position = (0,.0)
-gui2 = Gui()
-gui2.texture = 'assets/Continue_Button'
-gui2.position = (0,.25)
-store = Gui()
-store.text = 'Store'
-store.position = (0, -.25)
-store.on_click = inStore
+def goBack():
+    disableButton(wp)
+    enableButton(menu)
+
+def openMenu():
+    menu.visible = True
+    menu.disabled = False
+
+def addPower():
+    global score
+    player.strength += 1
+    print(player.strength)
+    score -= 5
+
+def closeMenu():
+    menu.disabled = True
+    menu.visible = False
 
 wp = WindowPanel(
-    title='Custom Window',
+    title='Store',
     content=(
-        
-        Text('Name:'),
-        InputField(name='name_field'),
-        Button(text='Submit', color=color.azure, on_click= inStore),
-        Slider(),
-        Slider(),
-        ButtonGroup(('box', 'eslk', 'skffk'))
+        Text(' '),
+        Button(),
+        Text('Add power' ),
+        Button('+1', on_click= addPower),
+        Button('Back',on_click = goBack),
+        Text(' ')
+        #Text('Store', alignment= 'center'),
+        #InputField(name='name_field'),
+        #Button(text='Submit', color=color.azure, on_click= inStore),
+        #Slider(),
+        #Slider(),
+        #ButtonGroup(('box', 'eslk', 'skffk'))
         ),
     )
-wp.x = -.5
+#Store Contents    
+
+moneyButton = wp.content[1]
+moneyButton.icon = "assets/currency_symbol"
+moneyButton.scale_x = .1
+moneyButton.x = -.4
+
+currentMoney = wp.content[0]
+currentMoney.x = 0
+currentMoney.y = -2.3
+
+addButton = wp.content[3]
+
+powerText = wp.content[2]
+powerText.origin = (-1.9,.9)
+
+
+menu = WindowPanel(
+    
+    title='Menu',
+    content=(
+        Text(' '),
+        Button('Coninue', on_click= closeMenu),
+        Button('Store', on_click= inStore),
+        Button('Exit', on_click=application.quit),
+        Text(' ')
+        
+        
+    ),
+)
+menuButton = Button('Menu', scale_y = .05, color =color.light_blue , scale_x = .25, position = (.70, .45), on_click = openMenu) 
+
+wp.z = 1
 wp.visible = False
 wp.disabled = True
+wp.color = color.light_blue/.5
+wp.panel.color = color.light_blue
+wp.highlight_color = wp.color
+wp.text_color = color.white
+wp.position = (0,.25)
+menu.z = -2
+menu.visible = False
+menu.disabled = True
+menu.color = color.light_blue/.5
+menu.panel.color = color.light_blue
+menu.highlight_color = menu.color
+
+storeButton = menu.content[2]
+storeButton.highlight_color = addButton.color.tint(.2)
+def displayClosed():
+        storeClosed =Tooltip('Store is Closed')
+        storeClosed.parent = storeButton
+        storeClosed.position = (-.25,6,5)
+        storeClosed.scale_x = 2
+        storeClosed.scale_y = 15
+        storeClosed.fade_out(duration=1)
+        storeClosed.background.fade_out(duration=1)
+    
+
+
+menu.text_color = color.white
+menu.position = (0,.25)
 #print(wp.content[5].value)
 
 
 
-
-
-
- 
+#Game Objects
 player = Player()
 tool = Tool()
 ui = UI()
@@ -212,6 +263,20 @@ tiles =[
 removedTiles = [
 
 ]
+
+#Background
+
+x_cord = 0
+y_cord = 0
+for x in range(mapx):
+    x_cord = 10
+    for y in range(4):
+        y = Background(x_cord, y_cord)
+        x_cord -= 10
+    y_cord -= 10
+       
+    
+
 
 
 # Generation function. Call the function with the below variables and it will generate the mine.
@@ -250,8 +315,6 @@ def checkblock(self, movement):
     for block in tiles:
         if player.x == block.x and player.y == block.y +1 and movement == "down":
             checkStrength(block, movement)
-
-            
             print('Block Below!')
             break
         elif player.y == block.y and player.x == block.x +1 and movement == "left":
@@ -276,11 +339,12 @@ def checkblank(self, movement):
                 player.x += 1
                 print('Can Move Right!')
                 break
-   
+
 def checkStrength(block, movement):
     if player.strength >= block.strength and movement == "down":
         removedTiles.append(block)
         block.visible = False
+        #Animation('assets/stone_break', scale = 1,fps=12, loop= False, position = (block.x, block.y))
         player.y -=1
         player.moves -= 1
         blockPay(block)
@@ -288,6 +352,7 @@ def checkStrength(block, movement):
         tiles.remove(block)
     elif player.strength >= block.strength and movement == "left":
         block.visible = False
+        #Animation('assets/stone_break', scale = 1,fps=12, loop= False, position = (block.x, block.y))
         player.x -=1
         player.moves -= 1
         blockPay(block)
@@ -297,6 +362,7 @@ def checkStrength(block, movement):
     elif player.strength >= block.strength and movement == "right":
         
         block.visible = False
+        #Animation('assets/stone_break', scale = 1,fps=12, loop= False, position = (block.x, block.y))
         player.x +=1
         player.moves -= 1
         blockPay(block)
@@ -315,11 +381,16 @@ def checkStrength(block, movement):
 
 def blockPay(block):
     global score
-    
     if block.name == 'ore':
         print('Added Moola')
-        updateScore(5)
+        updateScore(block.price)
         ui.text = 'Score: '  + str(score)
+    if block.name == 'iron':
+        updateScore(block.price)
+        ui.text = 'Score: ' + str(score)
+    if block.name == 'gold':
+        updateScore(block.price)
+        ui.text = 'Score: ' + str(score)    
 
         
 def updateScore(oreprice):
@@ -333,8 +404,39 @@ def updateScore(oreprice):
 # (And less than just incase) so it keeps them at the center of the screen.
 
 def update():
+    global canMove
+    global currentMoney
+    global score
+    if storeButton.disabled == True:
+        displayClosed()
+    if score > 0:
+        menu.content[2].disabled = False
+
+    else:
+        menu.content[2].disabled = True
+
+
+    if score <= 0:
+        addButton.disabled = True
+        noMoney =Tooltip('You have no money!')
+        noMoney.parent = addButton
+        noMoney.position = (-.25,6,0)
+        noMoney.scale_x = 2
+        noMoney.scale_y = 15
+        noMoney.fade_out(duration=1)
+        noMoney.background.fade_out(duration=1)
+        
+    else:
+        addButton.disabled = False
+        
+    if menu.visible == True:
+        canMove = False
+    else:
+        canMove = True
     ui2.text = 'Moves: ' + str(player.moves)
-    
+    menu.stop_dragging()
+    ui.text = 'Score: ' + str(score)
+    currentMoney.text = str(score)
     wp.stop_dragging()
     global generationStage
     if player.y <= camera.position.y:
