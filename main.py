@@ -1,16 +1,10 @@
-
 from ctypes import alignment
-from email.policy import default
-from msilib import sequence
-from turtle import back, onclick
-from unicodedata import name
 from ursina import *
 import random
 from ursina import Ursina, ButtonGroup
-import asyncio
 app = Ursina()
 # Window Setup
-window.fps_counter.enabled = False
+window.fps_counter.enabled = True
 window.exit_button.visible = False
 window.borderless = False
 camera.position = Vec3(-5, -3, -35)
@@ -22,6 +16,7 @@ mapx = 10
 mapy = 100
 canMove = True
 score = 0
+interactiveSpot = False
 class Tool(Entity):
     def __init__(self):
         super().__init__()
@@ -55,19 +50,26 @@ class Player(Entity):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def input(self, keys):
-            
+    def input(self, keys):  
         if canMove:
             if self.moves >= 1:
                 if keys == 'd':
                     checkblock(self, movement = "right")
                     checkblank(self,movement = "right")
+                    checkinteractive()
+                    updatePosition()
                 if keys == 'a':
                     checkblock(self, movement = "left")
                     checkblank(self, movement= "left")
+                    checkinteractive()
+                    updatePosition()
                 if keys == 's':
                     checkblock(self, movement = "down")
                     checkblank(self, movement= "down")
+                    checkinteractive()
+                    updatePosition()
+                if keys == 'w':
+                    player.y += 1
             
 class Background(Entity):
     def __init__(self, x = 0, y = 0):
@@ -79,7 +81,7 @@ class Background(Entity):
         self.scale= Vec3(10,10,0)
         self.z = 5
 
-class Wall(Entity):
+class Stone(Entity):
     def __init__(self, x = 0, y = 0):
         super().__init__()
         self.x = x
@@ -90,7 +92,7 @@ class Wall(Entity):
         self.strength = 0
         self.texture = "assets/StoneSprite"
 
-class Ore(Entity):
+class TinOre(Entity):
     def __init__(self, x = 0, y = 0):
         super().__init__()
         self.x = x
@@ -99,20 +101,32 @@ class Ore(Entity):
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.strength = 1
-        self.texture = "assets/OreSprite"
+        self.texture = "assets/TinOreSprite"
         self.price = 5
 
-class Iron(Entity):
+class IronOre(Entity):
     def __init__(self, x = 0, y = 0):
         super().__init__()
         self.x = x
         self.y = y
         self.model = 'cube'
-        self.texture = 'assets/iron_ore'
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.strength = 2
+        self.texture = "assets/IronOreSprite"
         self.price = 10
+
+class SilverOre(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.strength = 2
+        self.texture = "assets/SilverOreSprite"
+        self.price = 15
 
 class Gold(Entity):
     def __init__(self, x = 0, y = 0):
@@ -123,8 +137,20 @@ class Gold(Entity):
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.strength = 3
-        self.texture = 'assets/gold_ore'
+        self.texture = 'assets/GoldOreSprite'
         self.price = 25
+
+class Chest(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.strength = 100
+        self.color = color.brown
+
 #Pause Menu
 
 def inStore():
@@ -205,21 +231,21 @@ menu = WindowPanel(
         
     ),
 )
-menuButton = Button('Menu', scale_y = .05, color =color.light_blue , scale_x = .25, position = (.70, .45), on_click = openMenu) 
+menuButton = Button('Menu', scale_y = .05, color =color.blue , scale_x = .25, position = (.70, .45), on_click = openMenu) 
 
 wp.z = 1
 wp.visible = False
 wp.disabled = True
-wp.color = color.light_blue/.5
-wp.panel.color = color.light_blue
+wp.color = color.blue/.5
+wp.panel.color = color.blue
 wp.highlight_color = wp.color
 wp.text_color = color.white
 wp.position = (0,.25)
 menu.z = -2
 menu.visible = False
 menu.disabled = True
-menu.color = color.light_blue/.5
-menu.panel.color = color.light_blue
+menu.color = color.blue/.5
+menu.panel.color = color.blue
 menu.highlight_color = menu.color
 
 storeButton = menu.content[2]
@@ -250,9 +276,10 @@ ui2 = UI()
 ui2.position = Vec3(-.5,.45, 0)
 
 blocks = [
-    'wall1',
-    'ore',
-    'iron',
+    'stone',
+    'tinore',
+    'ironore',
+    'silverore',
     'gold',
 ]
 
@@ -261,6 +288,9 @@ tiles =[
 
 ]
 removedTiles = [
+
+]
+interactiveTiles = [
 
 ]
 
@@ -274,6 +304,8 @@ for x in range(mapx):
         y = Background(x_cord, y_cord)
         x_cord -= 10
     y_cord -= 10
+
+#Add Other Backgrounds the further they go down
        
     
 
@@ -282,21 +314,24 @@ for x in range(mapx):
 # Generation function. Call the function with the below variables and it will generate the mine.
 # If you don't want a tile to generate set weight as 0. You need all the weights of
 # all tiles for this to work.
-def generateBlocks(starting_posy, yrange, yrange2, weight1, weight2, weight3, weight4):
+def generateBlocks(starting_posy, yrange, yrange2, weight1, weight2, weight3, weight4, weight5):
     posx = 0
     posy = starting_posy
     for x in range(yrange, yrange2):
         posx = 0
         for y in range(mapx):
-            randint = random.choices(blocks, weights=[weight1, weight2, weight3, weight4])
-            if randint == ['wall1']:
-                y = Wall(posx, posy)
+            randint = random.choices(blocks, weights=[weight1, weight2, weight3, weight4, weight5])
+            if randint == ['stone']:
+                y = Stone(posx, posy)
                 tiles.append(y)
-            elif randint == ['ore']:
-                y = Ore(posx, posy)
+            elif randint == ['tinore']:
+                y = TinOre(posx, posy)
                 tiles.append(y)
-            elif randint == ['iron']:
-                y = Iron(posx,posy)
+            elif randint == ['ironore']:
+                y = IronOre(posx,posy)
+                tiles.append(y)
+            elif randint == ['silverore']:
+                y = SilverOre(posx,posy)
                 tiles.append(y)
             elif randint == ['gold']:
                 y = Gold(posx,posy)
@@ -304,14 +339,49 @@ def generateBlocks(starting_posy, yrange, yrange2, weight1, weight2, weight3, we
             posx -= 1
         posy -= 1
 
-generateBlocks(0, 0, 5, 40, 0, 0, 0) #Generates Stone. Y Levels 0-5
-generateBlocks(-5, 5, 25, 40, 2, 0, 0) #Generates Stone and Ore Mix. Y Levels 5-25
-generateBlocks(-25, 25, 50, 40, 2, 1, 0) #Generates Stone, Ore, and Iron Mix. Y Levels 25-50 
-generateBlocks(-50, 50, 100, 40, 3, 2, 1) #Generates Stone, Ore, Iron, and Gold Mix. Y Levels 50-100
+generateBlocks(0, 0, 5, 40, 0, 0, 0, 0) #Generates Stone. Y Levels 0-5
+generateBlocks(-5, 5, 25, 40, 2, 0, 0, 0) #Generates Stone and Ore Mix. Y Levels 5-25
+generateBlocks(-25, 25, 50, 40, 2, 1, 0, 0) #Generates Stone, Ore, and Iron Mix. Y Levels 25-50 
+generateBlocks(-50, 50, 100, 40, 3, 2, 1, 0) #Generates Stone, Ore, Iron, and Gold Mix. Y Levels 50-100
 generationStage = 100
 
+#Structure Generation, simply call the method of structure you want to generate and where
+#Example: chestroom(3, -24)
+def chestroom (posx, posy):
+   structurelayout = ["air", "air", "air", "air", "air", "air", "air", "Chest", "air"]
+   structureoffsets = [-1, 1, 0, 1, 1, 1, -1, 0, 0, 0, 1, 0, 1, -1, 0, -1, -1, -1]
+   print("Chest Room generation started")
+   structuretilegenerator(posx, posy, structurelayout, structureoffsets)
+
+def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
+    i = 0
+    while i < len(structurelayout):
+        xoffset = structureoffsets[i]
+        yoffset = structureoffsets[i + 1]
+        for block in tiles:
+            if posx + xoffset == block.x and posy + yoffset == block.y:
+                if structurelayout[i] == "air":
+                    removedTiles.append(block)
+                    block.visible = False
+                    tiles.remove(block)
+                    i += 1
+                else:
+                    removedTiles.append(block)
+                    block.visible = False
+                    tiles.remove(block)
+                    i += 1
+                    # newx = posx + xoffset
+                    # newy = posy + yoffset
+                    # y = f'{structurelayout[i]}({newx}, {newy})'
+                    # tiles.append(y)
+                    # break
+
+                    #Need to figure this part out, about to give up after 3 hours of trying to figure it out
+        print(f'Chest Room Generation Finished {i}')
+
+chestroom(-4, -5)
+
 def checkblock(self, movement):
-    
     for block in tiles:
         if player.x == block.x and player.y == block.y +1 and movement == "down":
             checkStrength(block, movement)
@@ -339,7 +409,17 @@ def checkblank(self, movement):
                 player.x += 1
                 print('Can Move Right!')
                 break
-
+def checkinteractive():
+        for block in interactiveTiles:
+            global interactiveSpot
+            if player.y == block.y and player.x == block.x:
+                interactiveSpot = True
+                print('Interactive Block!')
+                break
+            else:
+                interactiveSpot = False
+                print('Not an Interactive Block!')
+   
 def checkStrength(block, movement):
     if player.strength >= block.strength and movement == "down":
         removedTiles.append(block)
@@ -358,9 +438,9 @@ def checkStrength(block, movement):
         blockPay(block)
         tiles.remove(block)
         removedTiles.append(block)
+        interactiveTiles.append(block)
         print(block.name + ' Block Breakable')
     elif player.strength >= block.strength and movement == "right":
-        
         block.visible = False
         #Animation('assets/stone_break', scale = 1,fps=12, loop= False, position = (block.x, block.y))
         player.x +=1
@@ -381,21 +461,32 @@ def checkStrength(block, movement):
 
 def blockPay(block):
     global score
-    if block.name == 'ore':
-        print('Added Moola')
-        updateScore(block.price)
-        ui.text = 'Score: '  + str(score)
-    if block.name == 'iron':
-        updateScore(block.price)
-        ui.text = 'Score: ' + str(score)
-    if block.name == 'gold':
-        updateScore(block.price)
-        ui.text = 'Score: ' + str(score)    
+    match block.name:
+        case "tin_ore":
+            updateScore(block.price)
+        case "iron_ore":
+            updateScore(block.price)
+        case "silver_ore":
+            updateScore(block.price)
+
+# def blockPay(block):
+#     global score
+#     if block.name == "tin_ore":
+#         updateScore(5)
+#     if block.name == "iron_ore":
+#         updateScore(10)
+#     if block.name == "silver_ore":
+#         updateScore(15)
 
         
 def updateScore(oreprice):
     global score
     score += oreprice
+    ui.text = 'Score: '  + str(score)
+
+def updatePosition():
+    ui.text = f'Position: {player.x} {player.y}'
+    print(f'{player.x} {player.y}')
 
 
 
@@ -442,13 +533,25 @@ def update():
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
     if player.y <= -50 and generationStage in range(100,150):
-        generateBlocks(-generationStage, generationStage, generationStage + 1, 10, 3, 2, 1)
+        generateBlocks(-generationStage, generationStage, generationStage + 1, 10, 3, 2, 1, 1)
         generationStage += 1
         print(f"Did the Thing {generationStage}")
     if player.y <= -100 and generationStage in range(150,200):
-        generateBlocks(-generationStage, generationStage, generationStage + 1, 5, 10, 2, 1)
+        generateBlocks(-generationStage, generationStage, generationStage + 1, 5, 10, 2, 1, 1)
         generationStage += 1
         print(f"Did the Thing v2 {generationStage}")
+    # if interactiveSpot == True:
+    #     tip =Tooltip('E')
+    #     tip.parent = player
+    #     tip.position = (0,1,-1)
+    #     tip.scale = 10
+    for block in removedTiles:
+        if player.x == block.x and player.y == block.y +1:
+            player.y -=1
+            print('Gravity!')
+            break
+    
+
         
 
 # Need to add Gravity some how? Just check if there is a tile under the player
