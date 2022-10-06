@@ -364,12 +364,10 @@ def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
                     removedTiles.append(block)
                     block.visible = False
                     tiles.remove(block)
-                    i += 1
                 else:
                     removedTiles.append(block)
                     block.visible = False
                     tiles.remove(block)
-                    i += 1
                     # newx = posx + xoffset
                     # newy = posy + yoffset
                     # y = f'{structurelayout[i]}({newx}, {newy})'
@@ -377,6 +375,7 @@ def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
                     # break
 
                     #Need to figure this part out, about to give up after 3 hours of trying to figure it out
+        i += 1
         print(f'Chest Room Generation Finished {i}')
 
 chestroom(-4, -5)
