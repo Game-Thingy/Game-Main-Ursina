@@ -438,37 +438,54 @@ generationStage = 100
 #Structure Generation, simply call the method of structure you want to generate and where
 #Example: chestroom(3, -24)
 def chestroom (posx, posy):
-   structurelayout = ["air", "air", "air", "air", "air", "air", "air", "Chest", "air"]
+   structurelayout = ["air", "air", "air", "air", "air", "air", "air", "chest", "air"]
    structureoffsets = [-1, 1, 0, 1, 1, 1, -1, 0, 0, 0, 1, 0, 1, -1, 0, -1, -1, -1]
    print("Chest Room generation started")
    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
 
+def caveroomthatislegitjustairbecauseheislazyaf (posx, posy):
+   structurelayout = ["stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone",
+                      "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone",
+                      "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone",
+                      "stone", "stone", "stone", "stone", "air", "air", "air", "stone", "stone", "stone"
+                      "stone", "stone", "air", "air", "air", "air", "air", "air", "stone", "stone",
+                      "air", "air", "air", "air", "air", "air", "air", "air", "air", "air",
+                      "air", "air", "air", "air", "air", "air", "air", "air", "air", "air"]
+   structureoffsets = [-4,3,-3,3,-2,3,-1,3,0,3,1,3,2,3,3,3,4,3,5,3,-4,2,-3,2,-2,2,-1,2,0,2,1,2,2,2,3,2,4,2,5,2,-4,1,3,1,-2,1,-1,1,0,1,1,1,2,1,3,1,4,1,5,1,-4,0,-3,0,-2,0,-1,0,0,0,1,0,2,0,3,0,4,0,5,0,-4,-1,-3,-1,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,4,-1,5,-1,-4,-2,-3,-2,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-2,4,-2,5,-2,-4,-3,-3,-3,-2,-3,-1,-3,0,-3,1,-3,2,-3,3,-3,4,-3,5,-3]
+   print("Cave room that is legit just air because he is lazy af generation started")
+   structuretilegenerator(posx, posy, structurelayout, structureoffsets)
 def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
     i = 0
-    while i < len(structurelayout):
+    j = 0
+    while i < len(structureoffsets):
         xoffset = structureoffsets[i]
         yoffset = structureoffsets[i + 1]
         for block in tiles:
             if posx + xoffset == block.x and posy + yoffset == block.y:
-                if structurelayout[i] == "air":
+                if structurelayout[j] == "air":
                     removedTiles.append(block)
                     block.visible = False
                     tiles.remove(block)
-                else:
+                    print(f"{j} J Value")
+                    break
+                if structurelayout[j] == "chest":
                     removedTiles.append(block)
-                    block.visible = False
                     tiles.remove(block)
-                    # newx = posx + xoffset
-                    # newy = posy + yoffset
-                    # y = f'{structurelayout[i]}({newx}, {newy})'
-                    # tiles.append(y)
-                    # break
+                    block.visible = False
+                    newx = posx + xoffset
+                    newy = posy + yoffset
+                    y = Chest(newx,newy)
+                    tiles.append(y)
+                    print("I tried to add the chest")
+                    break
+                if structurelayout[j] == "stone":
+                    break
 
-                    #Need to figure this part out, about to give up after 3 hours of trying to figure it out
-        i += 1
+        i += 2
+        j += 1
         print(f'Chest Room Generation Finished {i}')
 
-chestroom(-4, -5)
+caveroomthatislegitjustairbecauseheislazyaf(-4, -5)
 
 def checkblock(movement):
     for block in tiles:
