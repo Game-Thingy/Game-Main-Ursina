@@ -134,7 +134,13 @@ class Player(Entity):
     #         else:
     #             canMove = False
                 
-
+class TopBackground(Sprite):
+    def __init__(self, x = -4.5, y = 5.5, z=0):
+        super().__init__()
+        self.position = (x,y,z)
+        self.model = 'cube'
+        self.texture = 'assets/snow'
+        self.scale = Vec3(10,10,0)
             
 class Background(Entity):
     def __init__(self, x = 0, y = 0):
@@ -218,7 +224,7 @@ class Chest(Entity):
 startScreen = StartScreen()
 #Game Objects
 player = Player()
-
+topBackground = TopBackground()
 tool = Tool()
 ui = UI()
 ui.position = Vec3(-.8,.45,0)
@@ -381,8 +387,8 @@ interactiveTiles = [
 #Background
 
 x_cord = 0
-y_cord = 0
-for x in range(mapx):
+y_cord = 50
+for x in range(100):
     x_cord = 10
     for y in range(4):
         y = Background(x_cord, y_cord)
