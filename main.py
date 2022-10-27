@@ -1,22 +1,47 @@
 from ctypes import alignment
+from email.policy import default
+from msilib import sequence
+from pyclbr import Function
+from tkinter import Scale
+from turtle import back, onclick, position
+from unicodedata import name
 from ursina import *
 import random
 from ursina import Ursina, ButtonGroup
+import time
 app = Ursina()
 # Window Setup
 window.fps_counter.enabled = True
 window.exit_button.visible = False
 window.borderless = False
 camera.position = Vec3(-5, -3, -35)
-
-
+last_time = time.time()
 
 
 mapx = 10
 mapy = 100
-canMove = True
+canMove = False
 score = 0
 interactiveSpot = False
+class StartScreen(Sprite):
+    def __init__(self):
+        super().__init__()
+        self.model = 'cube'
+        self.texture = 'assets/Digging-Game Title'
+    
+        self.scale = Vec3(5,2,0)
+        self.parent = camera
+        self.position = Vec3(0,1,15)
+        self.background = Sprite(model='cube',color = color.gray, scale = (25,25,0), parent=camera, position=(0,0,16))
+        self.startButton = Button('Start', scale=(.5,.1,0), position=(0,-.4,0))
+        self.startButton.on_click = self.startGame
+        self.onStart = True
+        
+    def startGame(self):
+        self.onStart = False
+        destroy(self)
+        destroy(self.background)
+        destroy(self.startButton)
 class Tool(Entity):
     def __init__(self):
         super().__init__()
@@ -26,6 +51,10 @@ class Tool(Entity):
         self.position = Vec2(-.8,-.4)
         self.toolStrenth = 1
         self.parent = camera.ui
+        self.visible = False
+    def update(self):
+        if startScreen.onStart == False:
+            self.visible = True
 
 
 class UI(Text):
@@ -33,43 +62,68 @@ class UI(Text):
         super().__init__()
         self.text  = 'Score: ' + str(score)
         self.color = color.white
-
+        self.visible = False
 
 class Player(Entity):
     def __init__(self, **kwargs):
         super().__init__()
-        self.model = 'cube'
         self.scale = Vec3(1, 1, 0)
-        self.texture = 'assets/PlayerSprite'
+        self.playerAnimate = Animator(animations = {
+            'walkLeft': Animation('assets/Playerleft', parent=self, scale = 1, fps=12),
+            'walkRight': Animation('assets/Playerright', parent=self, scale = 1, fps=12), 
+            'standingL': Sprite('assets/PlayerSprite', parent=self, scale=6),
+            'standingR': Sprite('assets/PlayerSpriteR', parent=self,scale=6),
+
+            }, )
         self.position = Vec3(-9, 1, -.1)
         self.origin_x = 0
         self.origin_y = 0
-        self.moves = 1000
+        self.moves = 100
         self.strength = 1
         self.disMove = Text(text=self.moves, wordwrap=30)
         for key, value in kwargs.items():
             setattr(self, key, value)
+    def update(self):
+        global last_time
+        
+        if held_keys['a']:
+            if last_time + 0.25 <= time.time():
+                last_time = time.time()
+                self.playerAnimate.state = 'walkLeft'
+                checkblock(movement = "left")
+                checkblank(movement= "left")
 
+        elif held_keys['d']:
+            if last_time + 0.25 <= time.time():
+                last_time = time.time()
+                self.playerAnimate.state = 'walkRight'
+                checkblock(movement = "right")
+                checkblank(movement= "right")
+        
+        else:
+            if self.playerAnimate.state == 'walkLeft':
+                self.playerAnimate.state = 'standingL'
+            if self.playerAnimate.state == 'walkRight':
+                self.playerAnimate.state= 'standingR'
     def input(self, keys):  
         if canMove:
             if self.moves >= 1:
-                if keys == 'd':
-                    checkblock(self, movement = "right")
-                    checkblank(self,movement = "right")
-                    checkinteractive()
-                    updatePosition()
-                if keys == 'a':
-                    checkblock(self, movement = "left")
-                    checkblank(self, movement= "left")
-                    checkinteractive()
-                    updatePosition()
+                # if keys == 'd':
+                #     checkblock(movement = "right")
+                #     checkblank(movement = "right")
+                # if keys == 'a':
+                    
+                #     checkblock(movement = "left")
+                #     checkblank(movement= "left")
                 if keys == 's':
-                    checkblock(self, movement = "down")
-                    checkblank(self, movement= "down")
+                    checkblock(movement = "down")
+                    checkblank(movement= "down")
                     checkinteractive()
                     updatePosition()
                 if keys == 'w':
                     player.y += 1
+                
+
             
 class Background(Entity):
     def __init__(self, x = 0, y = 0):
@@ -150,7 +204,15 @@ class Chest(Entity):
         self.z = 0
         self.strength = 100
         self.color = color.brown
+startScreen = StartScreen()
+#Game Objects
+player = Player()
 
+tool = Tool()
+ui = UI()
+ui.position = Vec3(-.8,.45,0)
+ui2 = UI()
+ui2.position = Vec3(-.5,.45, 0)
 #Pause Menu
 
 def inStore():
@@ -173,12 +235,25 @@ def goBack():
 def openMenu():
     menu.visible = True
     menu.disabled = False
+def addMoves():
+    global score
+    player.moves += 10
+    score -= 5
+
 
 def addPower():
+    global powerText
     global score
     player.strength += 1
-    print(player.strength)
     score -= 5
+    power.text = 'Power: ' + str(player.strength)
+    powerToolTip = Tooltip('Power up!')
+    powerToolTip.parent = addButton
+    powerToolTip.position = (0,-1,-1)
+    powerToolTip.scale_x = 2
+    powerToolTip.scale_y = 15
+    powerToolTip.fade_out(duration=1)
+    powerToolTip.background.fade_out(duration=1)
 
 def closeMenu():
     menu.disabled = True
@@ -187,10 +262,13 @@ def closeMenu():
 wp = WindowPanel(
     title='Store',
     content=(
+        Text('Power: ' + str(player.strength)),
         Text(' '),
         Button(),
         Text('Add power' ),
         Button('+1', on_click= addPower),
+        Text('Add moves'),
+        Button('+10', on_click= addMoves),
         Button('Back',on_click = goBack),
         Text(' ')
         #Text('Store', alignment= 'center'),
@@ -202,21 +280,22 @@ wp = WindowPanel(
         ),
     )
 #Store Contents    
-
-moneyButton = wp.content[1]
+power = wp.content[0]
+moneyButton = wp.content[2]
 moneyButton.icon = "assets/currency_symbol"
 moneyButton.scale_x = .1
 moneyButton.x = -.4
 
-currentMoney = wp.content[0]
+currentMoney = wp.content[1]
 currentMoney.x = 0
-currentMoney.y = -2.3
+currentMoney.y = -3.6
 
-addButton = wp.content[3]
-
-powerText = wp.content[2]
+addButton = wp.content[4]
+addMovesBtn = wp.content[6]
+addMovesTxt = wp.content[5]
+powerText = wp.content[3]
 powerText.origin = (-1.9,.9)
-
+addMovesTxt.origin = (-1.9,.9)
 
 menu = WindowPanel(
     
@@ -231,21 +310,21 @@ menu = WindowPanel(
         
     ),
 )
-menuButton = Button('Menu', scale_y = .05, color =color.blue , scale_x = .25, position = (.70, .45), on_click = openMenu) 
+menuButton = Button('Menu', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, .45), on_click = openMenu) 
 
 wp.z = 1
 wp.visible = False
 wp.disabled = True
-wp.color = color.blue/.5
-wp.panel.color = color.blue
+wp.color = color.azure/.8
+wp.panel.color = color.azure
 wp.highlight_color = wp.color
 wp.text_color = color.white
-wp.position = (0,.25)
+wp.position = (0,.25, 1)
 menu.z = -2
 menu.visible = False
 menu.disabled = True
-menu.color = color.blue/.5
-menu.panel.color = color.blue
+menu.color = color.azure/.8
+menu.panel.color = color.azure
 menu.highlight_color = menu.color
 
 storeButton = menu.content[2]
@@ -253,7 +332,7 @@ storeButton.highlight_color = addButton.color.tint(.2)
 def displayClosed():
         storeClosed =Tooltip('Store is Closed')
         storeClosed.parent = storeButton
-        storeClosed.position = (-.25,6,5)
+        storeClosed.position = (-.15,5,5)
         storeClosed.scale_x = 2
         storeClosed.scale_y = 15
         storeClosed.fade_out(duration=1)
@@ -267,13 +346,7 @@ menu.position = (0,.25)
 
 
 
-#Game Objects
-player = Player()
-tool = Tool()
-ui = UI()
-ui.position = Vec3(-.8,.45,0)
-ui2 = UI()
-ui2.position = Vec3(-.5,.45, 0)
+
 
 blocks = [
     'stone',
@@ -380,7 +453,7 @@ def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
 
 chestroom(-4, -5)
 
-def checkblock(self, movement):
+def checkblock(movement):
     for block in tiles:
         if player.x == block.x and player.y == block.y +1 and movement == "down":
             checkStrength(block, movement)
@@ -395,7 +468,7 @@ def checkblock(self, movement):
             print('Block Right!')
             break
 
-def checkblank(self, movement):
+def checkblank(movement):
         for block in removedTiles:
             if player.x == block.x and player.y == block.y +1 and movement == "down":
                 print('Can Move Back')
@@ -423,7 +496,6 @@ def checkStrength(block, movement):
     if player.strength >= block.strength and movement == "down":
         removedTiles.append(block)
         block.visible = False
-        #Animation('assets/stone_break', scale = 1,fps=12, loop= False, position = (block.x, block.y))
         player.y -=1
         player.moves -= 1
         blockPay(block)
@@ -431,7 +503,7 @@ def checkStrength(block, movement):
         tiles.remove(block)
     elif player.strength >= block.strength and movement == "left":
         block.visible = False
-        #Animation('assets/stone_break', scale = 1,fps=12, loop= False, position = (block.x, block.y))
+        #playAnimation('assets/Player left', block.x, block.y, player)
         player.x -=1
         player.moves -= 1
         blockPay(block)
@@ -441,7 +513,6 @@ def checkStrength(block, movement):
         print(block.name + ' Block Breakable')
     elif player.strength >= block.strength and movement == "right":
         block.visible = False
-        #Animation('assets/stone_break', scale = 1,fps=12, loop= False, position = (block.x, block.y))
         player.x +=1
         player.moves -= 1
         blockPay(block)
@@ -497,20 +568,28 @@ def update():
     global canMove
     global currentMoney
     global score
+    
+    if startScreen.onStart == False:
+        ui.visible = True
+        ui2.visible = True
+        canMove = True
+    
     if storeButton.disabled == True:
         displayClosed()
     if score > 0:
         menu.content[2].disabled = False
+        
 
     else:
         menu.content[2].disabled = True
 
 
     if score <= 0:
+        addMovesBtn.disabled = True
         addButton.disabled = True
         noMoney =Tooltip('You have no money!')
         noMoney.parent = addButton
-        noMoney.position = (-.25,6,0)
+        noMoney.position = (-.25,7,0)
         noMoney.scale_x = 2
         noMoney.scale_y = 15
         noMoney.fade_out(duration=1)
@@ -518,7 +597,8 @@ def update():
         
     else:
         addButton.disabled = False
-        
+        addMovesBtn.disabled = False
+
     if menu.visible == True:
         canMove = False
     else:
