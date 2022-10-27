@@ -67,6 +67,7 @@ class UI(Text):
 class Player(Entity):
     def __init__(self, **kwargs):
         super().__init__()
+        
         self.scale = Vec3(1, 1, 0)
         self.playerAnimate = Animator(animations = {
             'walkLeft': Animation('assets/Playerleft', parent=self, scale = 1, fps=12),
@@ -85,43 +86,52 @@ class Player(Entity):
             setattr(self, key, value)
     def update(self):
         global last_time
-        
-        if held_keys['a']:
-            if last_time + 0.25 <= time.time():
-                last_time = time.time()
-                self.playerAnimate.state = 'walkLeft'
-                checkblock(movement = "left")
-                checkblank(movement= "left")
-
-        elif held_keys['d']:
-            if last_time + 0.25 <= time.time():
-                last_time = time.time()
-                self.playerAnimate.state = 'walkRight'
-                checkblock(movement = "right")
-                checkblank(movement= "right")
-        
-        else:
-            if self.playerAnimate.state == 'walkLeft':
-                self.playerAnimate.state = 'standingL'
-            if self.playerAnimate.state == 'walkRight':
-                self.playerAnimate.state= 'standingR'
-    def input(self, keys):  
+        global canMove
         if canMove:
-            if self.moves >= 1:
-                # if keys == 'd':
-                #     checkblock(movement = "right")
-                #     checkblank(movement = "right")
-                # if keys == 'a':
+            if held_keys['a']:
+                if last_time + 0.25 <= time.time():
+                    last_time = time.time()
+                    self.playerAnimate.state = 'walkLeft'
+                    checkblock(movement = "left")
+                    checkblank(movement= "left")
+
+            elif held_keys['d']:
+                if last_time + 0.25 <= time.time():
+                    last_time = time.time()
+                    self.playerAnimate.state = 'walkRight'
+                    checkblock(movement = "right")
+                    checkblank(movement= "right")
+            elif held_keys['s']:
+                if last_time + 0.25 <= time.time():
+                    last_time = time.time()
                     
-                #     checkblock(movement = "left")
-                #     checkblank(movement= "left")
-                if keys == 's':
                     checkblock(movement = "down")
                     checkblank(movement= "down")
-                    checkinteractive()
-                    updatePosition()
-                if keys == 'w':
-                    player.y += 1
+            
+            else:
+                if self.playerAnimate.state == 'walkLeft':
+                    self.playerAnimate.state = 'standingL'
+                if self.playerAnimate.state == 'walkRight':
+                    self.playerAnimate.state= 'standingR'
+    # def input(self, keys): 
+    #     global canMove
+    #     if canMove:
+    #         if self.moves >= 1:
+    #             # if keys == 'd':
+    #             #     checkblock(movement = "right")
+    #             #     checkblank(movement = "right")
+    #             # if keys == 'a':
+                    
+    #             #     checkblock(movement = "left")
+    #             #     checkblank(movement= "left")
+    #             if keys == 's':
+    #                 checkblock(movement = "down")
+    #                 checkblank(movement= "down")
+    #                 checkinteractive()
+    #                 updatePosition()
+                
+    #         else:
+    #             canMove = False
                 
 
             
@@ -601,8 +611,7 @@ def update():
 
     if menu.visible == True:
         canMove = False
-    else:
-        canMove = True
+
     ui2.text = 'Moves: ' + str(player.moves)
     menu.stop_dragging()
     ui.text = 'Score: ' + str(score)
