@@ -1,4 +1,5 @@
 from ctypes import alignment
+from dis import dis
 from email.policy import default
 from msilib import sequence
 from pyclbr import Function
@@ -45,9 +46,9 @@ class StartScreen(Sprite):
 class Tool(Entity):
     def __init__(self):
         super().__init__()
-        self.model = 'cube'
-        self.scale = Vec3(.08, .08, 0)
-        self.texture = 'assets/PlayerSprite'
+        #self.model = 'cube'
+        # self.scale = Vec3(.08, .08, 0)
+        # self.texture = 'assets/PlayerSprite'
         self.position = Vec2(-.8,-.4)
         self.toolStrenth = 1
         self.parent = camera.ui
@@ -78,9 +79,10 @@ class Player(Entity):
 
             }, )
         self.position = Vec3(-9, 1, -.1)
+        self.day = 1
         self.origin_x = 0
         self.origin_y = 0
-        self.moves = 100
+        self.moves = 5
         self.strength = 1
         self.disMove = Text(text=self.moves, wordwrap=30)
         for key, value in kwargs.items():
@@ -230,21 +232,31 @@ ui = UI()
 ui.position = Vec3(-.8,.45,0)
 ui2 = UI()
 ui2.position = Vec3(-.5,.45, 0)
+uiDay = UI()
+uiDay.position = Vec3(.4,.45,0)
 #Pause Menu
+
+def disableButton(disButton):
+    disButton.disabled = True
+    disButton.visible = False
+def enableButton(enButton):
+    enButton.disabled = False
+    enButton.visible = True
+
 
 def inStore():
     print("You are in the store")
     disableButton(menu)
     enableButton(wp)
 
-def disableButton(disButton):
-    disButton.enabled = False
-    disButton.visible = False
+def inStore2():
+    print('You are in the store')
+    disableButton(dayEndMenu)
+    enableButton(endStore)
 
-def enableButton(enButton):
-    enButton.enabled = True
-    enButton.visible = True
-
+def goBack2():
+    disableButton(endStore)
+    enableButton(dayEndMenu)
 def goBack():
     disableButton(wp)
     enableButton(menu)
@@ -275,6 +287,67 @@ def addPower():
 def closeMenu():
     menu.disabled = True
     menu.visible = False
+
+
+def dayEnd():
+    dayEndMenu.visible = True
+    dayEndMenu.disabled = False
+def restart():
+    dayEndMenu.visible = False
+    dayEndMenu.disabled = True
+    player.position = Vec3(-9, 1, -.1)
+    player.moves = 25
+    camera.position = Vec3(-5, -3, -35)
+    player.day += 1
+    global tiles
+    global removedTiles
+    global interactiveTiles
+    global generationStage
+    for block in tiles:
+        destroy(block)
+    for block in removedTiles:
+        destroy(block)
+    for block in interactiveTiles:
+        destroy(block)
+    tiles = []
+    removedTiles = []
+    interactiveTiles = []
+    generateBlocks(0, 0, 5, 40, 0, 0, 0, 0) #Generates Stone. Y Levels 0-5
+    generateBlocks(-5, 5, 25, 40, 2, 0, 0, 0) #Generates Stone and Ore Mix. Y Levels 5-25
+    generateBlocks(-25, 25, 50, 40, 2, 1, 0, 0) #Generates Stone, Ore, and Iron Mix. Y Levels 25-50 
+    generateBlocks(-50, 50, 100, 40, 3, 2, 1, 0) #Generates Stone, Ore, Iron, and Gold Mix. Y Levels 50-100
+    generationStage = 100
+dayEndMenu = WindowPanel(
+    title='Day Over',
+    content=(
+        Text(' '),
+        Button('Continue', on_click= restart),
+        Button('Store', on_click=inStore2),
+        Text(' ')
+        
+        
+    ),
+)
+endStore = WindowPanel(
+    title='the store',
+    content=(
+        Text('Power: ' + str(player.strength)),
+        Text(' '),
+        Button(),
+        Text('Add power' ),
+        Button('+1', on_click= addPower),
+        Text('Add moves'),
+        Button('+10', on_click= addMoves),
+        Button('Back',on_click = goBack2),
+        Text(' ')
+        #Text('Store', alignment= 'center'),
+        #InputField(name='name_field'),
+        #Button(text='Submit', color=color.azure, on_click= inStore),
+        #Slider(),
+        #Slider(),
+        #ButtonGroup(('box', 'eslk', 'skffk'))
+        ),
+    )
 
 wp = WindowPanel(
     title='Store',
@@ -315,12 +388,12 @@ powerText.origin = (-1.9,.9)
 addMovesTxt.origin = (-1.9,.9)
 
 menu = WindowPanel(
-    
     title='Menu',
     content=(
         Text(' '),
-        Button('Coninue', on_click= closeMenu),
+        Button('Continue', on_click= closeMenu),
         Button('Store', on_click= inStore),
+        Button('Restart', on_click = restart),
         Button('Exit', on_click=application.quit),
         Text(' ')
         
@@ -336,14 +409,29 @@ wp.color = color.azure/.8
 wp.panel.color = color.azure
 wp.highlight_color = wp.color
 wp.text_color = color.white
-wp.position = (0,.25, 1)
-menu.z = -2
+wp.position = (0,.25)
+menu.z = -4
 menu.visible = False
 menu.disabled = True
 menu.color = color.azure/.8
 menu.panel.color = color.azure
 menu.highlight_color = menu.color
-
+dayEndMenu.visible = False
+dayEndMenu.disabled = True
+dayEndMenu.color = color.azure/.8
+dayEndMenu.panel.color = color.azure
+dayEndMenu.highlight_color = dayEndMenu.color
+dayEndMenu.text_color = color.white
+dayEndMenu.position = (0,.25)
+endStore.visible = False
+endStore.disabled = True
+endStore.color = color.azure/.8
+endStore.panel.color = color.azure
+endStore.highlight_color = dayEndMenu.color
+endStore.text_color = color.white
+endStore.position = (0,.25)
+dayEndMenu.z = -6
+endStore.z -5
 storeButton = menu.content[2]
 storeButton.highlight_color = addButton.color.tint(.2)
 def displayClosed():
@@ -532,6 +620,8 @@ def checkStrength(block, movement):
         block.visible = False
         player.y -=1
         player.moves -= 1
+        if player.moves <= 0:
+            dayEnd()
         blockPay(block)
         print(block.name + ' Block Breakable')
         tiles.remove(block)
@@ -540,6 +630,8 @@ def checkStrength(block, movement):
         #playAnimation('assets/Player left', block.x, block.y, player)
         player.x -=1
         player.moves -= 1
+        if player.moves <= 0:
+            dayEnd()
         blockPay(block)
         tiles.remove(block)
         removedTiles.append(block)
@@ -549,6 +641,8 @@ def checkStrength(block, movement):
         block.visible = False
         player.x +=1
         player.moves -= 1
+        if player.moves <= 0:
+            dayEnd()
         blockPay(block)
         print(block.name + ' Block Breakable')
         tiles.remove(block)
@@ -606,11 +700,12 @@ def update():
     if startScreen.onStart == False:
         ui.visible = True
         ui2.visible = True
+        uiDay.visible = True
         canMove = True
     
     if storeButton.disabled == True:
         displayClosed()
-    if score > 0:
+    if player.y == 1:
         menu.content[2].disabled = False
         
 
@@ -633,14 +728,17 @@ def update():
         addButton.disabled = False
         addMovesBtn.disabled = False
 
-    if menu.visible == True:
+    if menu.visible == True or player.moves == 0:
         canMove = False
-
+    
     ui2.text = 'Moves: ' + str(player.moves)
+    uiDay.text = "Day: " + str(player.day)
     menu.stop_dragging()
     ui.text = 'Score: ' + str(score)
     currentMoney.text = str(score)
+    dayEndMenu.stop_dragging()
     wp.stop_dragging()
+
     global generationStage
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
