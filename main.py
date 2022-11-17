@@ -10,12 +10,14 @@ from ursina import *
 import random
 from ursina import Ursina, ButtonGroup
 import time
+import sprites
+
 app = Ursina()
 # Window Setup
 window.fps_counter.enabled = True
 window.exit_button.visible = False
 window.borderless = False
-camera.position = Vec3(-5, -3, -35)
+camera.position = Vec3(-5, 2, -35)
 last_time = time.time()
 
 
@@ -107,126 +109,19 @@ class Player(Entity):
             elif held_keys['s']:
                 if last_time + 0.25 <= time.time():
                     last_time = time.time()
-                    
                     checkblock(movement = "down")
                     checkblank(movement= "down")
-            
             else:
                 if self.playerAnimate.state == 'walkLeft':
                     self.playerAnimate.state = 'standingL'
                 if self.playerAnimate.state == 'walkRight':
                     self.playerAnimate.state= 'standingR'
-    # def input(self, keys): 
-    #     global canMove
-    #     if canMove:
-    #         if self.moves >= 1:
-    #             # if keys == 'd':
-    #             #     checkblock(movement = "right")
-    #             #     checkblank(movement = "right")
-    #             # if keys == 'a':
-                    
-    #             #     checkblock(movement = "left")
-    #             #     checkblank(movement= "left")
-    #             if keys == 's':
-    #                 checkblock(movement = "down")
-    #                 checkblank(movement= "down")
-    #                 checkinteractive()
-    #                 updatePosition()
-                
-    #         else:
-    #             canMove = False
-                
-class TopBackground(Sprite):
-    def __init__(self, x = -4.5, y = 5.5, z=0):
-        super().__init__()
-        self.position = (x,y,z)
-        self.model = 'cube'
-        self.texture = 'assets/snow'
-        self.scale = Vec3(10,10,0)
-            
-class Background(Entity):
-    def __init__(self, x = 0, y = 0):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.model= 'cube'
-        self.texture = 'background_level1'
-        self.scale= Vec3(10,10,0)
-        self.z = 5
 
-class Stone(Entity):
-    def __init__(self, x = 0, y = 0):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.model = 'cube'
-        self.scale = Vec3(1, 1, 0)
-        self.z = 0
-        self.strength = 0
-        self.texture = "assets/StoneSprite"
 
-class TinOre(Entity):
-    def __init__(self, x = 0, y = 0):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.model = 'cube'
-        self.scale = Vec3(1, 1, 0)
-        self.z = 0
-        self.strength = 1
-        self.texture = "assets/TinOreSprite"
-        self.price = 5
-
-class IronOre(Entity):
-    def __init__(self, x = 0, y = 0):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.model = 'cube'
-        self.scale = Vec3(1, 1, 0)
-        self.z = 0
-        self.strength = 2
-        self.texture = "assets/IronOreSprite"
-        self.price = 10
-
-class SilverOre(Entity):
-    def __init__(self, x = 0, y = 0):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.model = 'cube'
-        self.scale = Vec3(1, 1, 0)
-        self.z = 0
-        self.strength = 2
-        self.texture = "assets/SilverOreSprite"
-        self.price = 15
-
-class Gold(Entity):
-    def __init__(self, x = 0, y = 0):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.model = 'cube'
-        self.scale = Vec3(1, 1, 0)
-        self.z = 0
-        self.strength = 3
-        self.texture = 'assets/GoldOreSprite'
-        self.price = 25
-
-class Chest(Entity):
-    def __init__(self, x = 0, y = 0):
-        super().__init__()
-        self.x = x
-        self.y = y
-        self.model = 'cube'
-        self.scale = Vec3(1, 1, 0)
-        self.z = 0
-        self.strength = 100
-        self.color = color.brown
 startScreen = StartScreen()
 #Game Objects
 player = Player()
-topBackground = TopBackground()
+topBackground = sprites.TopBackground()
 tool = Tool()
 ui = UI()
 ui.position = Vec3(-.8,.45,0)
@@ -303,15 +198,19 @@ def restart():
     global removedTiles
     global interactiveTiles
     global generationStage
+    global backgroundtiles
     for block in tiles:
         destroy(block)
     for block in removedTiles:
         destroy(block)
     for block in interactiveTiles:
         destroy(block)
+    for block in backgroundtiles:
+        destroy(block)
     tiles = []
     removedTiles = []
     interactiveTiles = []
+    backgroundtiles = []
     generateBlocks(0, 0, 5, 40, 0, 0, 0, 0) #Generates Stone. Y Levels 0-5
     generateBlocks(-5, 5, 25, 40, 2, 0, 0, 0) #Generates Stone and Ore Mix. Y Levels 5-25
     generateBlocks(-25, 25, 50, 40, 2, 1, 0, 0) #Generates Stone, Ore, and Iron Mix. Y Levels 25-50 
@@ -465,6 +364,10 @@ tiles =[
 
 
 ]
+
+backgroundtiles =[
+
+]
 removedTiles = [
 
 ]
@@ -479,7 +382,7 @@ y_cord = 50
 for x in range(100):
     x_cord = 10
     for y in range(4):
-        y = Background(x_cord, y_cord)
+        y = sprites.Background(x_cord, y_cord)
         x_cord -= 10
     y_cord -= 10
 
@@ -500,19 +403,19 @@ def generateBlocks(starting_posy, yrange, yrange2, weight1, weight2, weight3, we
         for y in range(mapx):
             randint = random.choices(blocks, weights=[weight1, weight2, weight3, weight4, weight5])
             if randint == ['stone']:
-                y = Stone(posx, posy)
+                y = sprites.Stone(posx, posy)
                 tiles.append(y)
             elif randint == ['tinore']:
-                y = TinOre(posx, posy)
+                y = sprites.TinOre(posx, posy)
                 tiles.append(y)
             elif randint == ['ironore']:
-                y = IronOre(posx,posy)
+                y = sprites.IronOre(posx,posy)
                 tiles.append(y)
             elif randint == ['silverore']:
-                y = SilverOre(posx,posy)
+                y = sprites.SilverOre(posx,posy)
                 tiles.append(y)
             elif randint == ['gold']:
-                y = Gold(posx,posy)
+                y = sprites.Gold(posx,posy)
                 tiles.append(y)
             posx -= 1
         posy -= 1
@@ -532,16 +435,18 @@ def chestroom (posx, posy):
    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
 
 def caveroomthatislegitjustairbecauseheislazyaf (posx, posy):
-   structurelayout = ["stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone",
-                      "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone",
-                      "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone", "stone",
-                      "stone", "stone", "stone", "stone", "air", "air", "air", "stone", "stone", "stone"
-                      "stone", "stone", "air", "air", "air", "air", "air", "air", "stone", "stone",
-                      "air", "air", "air", "air", "air", "air", "air", "air", "air", "air",
-                      "air", "air", "air", "air", "air", "air", "air", "air", "air", "air"]
-   structureoffsets = [-4,3,-3,3,-2,3,-1,3,0,3,1,3,2,3,3,3,4,3,5,3,-4,2,-3,2,-2,2,-1,2,0,2,1,2,2,2,3,2,4,2,5,2,-4,1,3,1,-2,1,-1,1,0,1,1,1,2,1,3,1,4,1,5,1,-4,0,-3,0,-2,0,-1,0,0,0,1,0,2,0,3,0,4,0,5,0,-4,-1,-3,-1,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,4,-1,5,-1,-4,-2,-3,-2,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-2,4,-2,5,-2,-4,-3,-3,-3,-2,-3,-1,-3,0,-3,1,-3,2,-3,3,-3,4,-3,5,-3]
+   structurelayout = ["air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air"]    
+   structureoffsets = [0,2,1,2,2,2,-2,1,-1,1,0,1,1,1,2,1,3,1,-4,0,-3,0,-2,0,-1,0,0,0,1,0,2,0,3,0,4,0,-4,-1,-3,-1,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,4,-1,-4,-2,-3,-2,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-3,4,-4]
    print("Cave room that is legit just air because he is lazy af generation started")
    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
+
+def mineshaft (posx, posy):
+   structurelayout = ["air","stalactite","air","air","air","air","air","air","air","air","air","air","shaftplank","shaftplank","shaftplank","shaftplank","air","air","air","air","shaftsupport","air","air","shaftsupport","air","air","rail","rail","shaftsupport","chest","air","shaftsupport","air","minecart"]
+   structureoffsets = [-1,2,0,2,1,2,2,2,-2,1,-1,1,0,1,1,1,2,1,3,1,-3,0,-2,0,-1,0,0,0,1,0,2,0,3,0,4,0,-3,-1,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,4,-1,-3,-2,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-2,4,-2]
+   print("Mineshaft generation started")
+   structuretilegenerator(posx, posy, structurelayout, structureoffsets)
+
+
 def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
     i = 0
     j = 0
@@ -550,30 +455,51 @@ def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
         yoffset = structureoffsets[i + 1]
         for block in tiles:
             if posx + xoffset == block.x and posy + yoffset == block.y:
-                if structurelayout[j] == "air":
-                    removedTiles.append(block)
-                    block.visible = False
-                    tiles.remove(block)
-                    print(f"{j} J Value")
-                    break
-                if structurelayout[j] == "chest":
-                    removedTiles.append(block)
-                    tiles.remove(block)
-                    block.visible = False
-                    newx = posx + xoffset
-                    newy = posy + yoffset
-                    y = Chest(newx,newy)
-                    tiles.append(y)
-                    print("I tried to add the chest")
-                    break
-                if structurelayout[j] == "stone":
-                    break
-
+                match structurelayout[j]:
+                    case "air":
+                        removedTiles.append(block)
+                        block.visible = False
+                        tiles.remove(block)
+                        break
+                    case "chest":
+                        structureblockgenbackground(block, sprites.Chest, posx, posy, xoffset, yoffset)
+                        break
+                    case "stalactite":
+                        structureblockgen(block, sprites.Stalactite, posx, posy, xoffset, yoffset)
+                        break
+                    case "shaftplank":
+                        structureblockgenbackground(block, sprites.ShaftPlank, posx, posy, xoffset, yoffset)
+                        break
+                    case "shaftsupport":
+                        structureblockgenbackground(block, sprites.ShaftSupport, posx, posy, xoffset, yoffset)
+                        break
+                    case "rail":
+                        structureblockgenbackground(block, sprites.Rail, posx, posy, xoffset, yoffset)
+                        break
+                    case "minecart":
+                        structureblockgenbackground(block, sprites.Minecart, posx, posy, xoffset, yoffset)
+                        break
         i += 2
         j += 1
-        print(f'Chest Room Generation Finished {i}')
+def structureblockgen(block, newblock, posx, posy, xoffset, yoffset):
+    removedTiles.append(block)
+    tiles.remove(block)
+    block.visible = False
+    newx = posx + xoffset
+    newy = posy + yoffset
+    y = newblock(newx,newy)
+    tiles.append(y)
 
-caveroomthatislegitjustairbecauseheislazyaf(-4, -5)
+def structureblockgenbackground(block, newblock, posx, posy, xoffset, yoffset):
+    removedTiles.append(block)
+    tiles.remove(block)
+    block.visible = False
+    newx = posx + xoffset
+    newy = posy + yoffset
+    y = newblock(newx,newy)
+    backgroundtiles.append(y)
+
+mineshaft(-5, -5)
 
 def checkblock(movement):
     for block in tiles:
@@ -666,15 +592,6 @@ def blockPay(block):
             updateScore(block.price)
         case "silver_ore":
             updateScore(block.price)
-
-# def blockPay(block):
-#     global score
-#     if block.name == "tin_ore":
-#         updateScore(5)
-#     if block.name == "iron_ore":
-#         updateScore(10)
-#     if block.name == "silver_ore":
-#         updateScore(15)
 
         
 def updateScore(oreprice):
