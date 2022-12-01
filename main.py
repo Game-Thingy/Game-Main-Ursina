@@ -185,6 +185,7 @@ def closeMenu():
     menu.visible = False
 
 def resetMenu():
+    
     menuButton1.text = 'Continue'
     menuButton1.on_click = closeMenu
     menuButton2.text = 'Store'
@@ -229,6 +230,7 @@ def restart():
     saveGame()
 
 def saveGame():
+    print('in save game function')
     with open('saves/slot1.yml') as file:
         saves = yaml.safe_load(file)
     saves['Score'] = score
@@ -239,7 +241,13 @@ def saveGame():
         yaml.dump(saves, file)
     file.close()
 def dayEnd():
-    print()
+    openMenu()
+    menuButton1.text = 'Go to next Day'
+    menuButton1.on_click = restart
+    menuButton3.text = 'Exit'
+    menuButton3.on_click = app.closeWindow
+    menuButton4.disabled = True
+    menuButton4.visible = False
 # dayEndMenu = WindowPanel(
 #     title='Day Over',
 #     content=(
@@ -346,16 +354,16 @@ def checkedSave3():
     saveButton2.color = color.azure
     saveButton1.color = color.azure
     saveGame()
-def saveGame():
-    global f
-    global checkSave1
-    global checkSave2
-    global checkSave3
-    print(checkSave1)
-    print(checkSave2)
-    print(checkSave3)
-    if checkSave1 == True:
-        print()
+# def saveGame():
+#     global f
+#     global checkSave1
+#     global checkSave2
+#     global checkSave3
+#     print(checkSave1)
+#     print(checkSave2)
+#     print(checkSave3)
+#     if checkSave1 == True:
+#         print()
   
 menu = WindowPanel(
     title='Menu',
@@ -370,6 +378,7 @@ menu = WindowPanel(
         
     ),
 )
+
 menuButton1 = menu.content[1]
 menuButton2 = menu.content[2]
 menuButton3 = menu.content[3]
