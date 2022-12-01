@@ -30,6 +30,7 @@ mapy = 100
 canMove = False
 score = savesread['Score']
 interactiveSpot = False
+
 class StartScreen(Sprite):
     def __init__(self):
         super().__init__()
@@ -136,29 +137,28 @@ def disableButton(disButton):
 def enableButton(enButton):
     enButton.disabled = False
     enButton.visible = True
+def moveToFront(obj, obj2):
+    obj.z = -1
+    obj2.z = 0
 
 def inStore():
     print("You are in the store")
     disableButton(menu)
     enableButton(wp)
-
-def inStore2():
-    print('You are in the store')
-    disableButton(dayEndMenu)
-    enableButton(endStore)
-
-def goBack2():
-    disableButton(endStore)
-    enableButton(dayEndMenu)
+    moveToFront(wp,menu)
+    
 
 def goBack():
     disableButton(wp)
     enableButton(menu)
+    moveToFront(menu,wp)
 
 def openMenu():
     menu.visible = True
     menu.disabled = False
-
+    moveToFront(menu,wp)
+    
+    
 def addMoves():
     global score
     player.moves += 10
@@ -184,13 +184,22 @@ def closeMenu():
     menu.disabled = True
     menu.visible = False
 
-def dayEnd():
-    dayEndMenu.visible = True
-    dayEndMenu.disabled = False
+def resetMenu():
+    menuButton1.text = 'Continue'
+    menuButton1.on_click = closeMenu
+    menuButton2.text = 'Store'
+    menuButton2.on_click = inStore
+    menuButton3.text = 'Restart'
+    menuButton3.on_click = restart
+    menuButton4.text = 'Exit'
+    menuButton4.on_click = app.closeWindow
+    menuButton4.disabled = False
+    menuButton4.visible = True
+    
 
 def restart():
-    dayEndMenu.visible = False
-    dayEndMenu.disabled = True
+    closeMenu()
+    resetMenu()
     player.position = Vec3(-9, 1, -.1)
     player.moves = savesread['MaxMoves']
     camera.position = Vec3(-5, -3, -35)
@@ -229,38 +238,39 @@ def saveGame():
     with open('saves/slot1.yml', 'w') as file:
         yaml.dump(saves, file)
     file.close()
-
-dayEndMenu = WindowPanel(
-    title='Day Over',
-    content=(
-        Text(' '),
-        Button('Continue', on_click= restart),
-        Button('Store', on_click=inStore2),
-        Text(' ')
+def dayEnd():
+    print()
+# dayEndMenu = WindowPanel(
+#     title='Day Over',
+#     content=(
+#         Text(' '),
+#         Button('Continue', on_click= restart),
+#         Button('Store', on_click=inStore2),
+#         Text(' ')
         
         
-    ),
-)
-endStore = WindowPanel(
-    title='the store',
-    content=(
-        Text('Power: ' + str(player.strength)),
-        Text(' '),
-        Button(),
-        Text('Add power' ),
-        Button('+1', on_click= addPower),
-        Text('Add moves'),
-        Button('+10', on_click= addMoves),
-        Button('Back',on_click = goBack2),
-        Text(' ')
-        #Text('Store', alignment= 'center'),
-        #InputField(name='name_field'),
-        #Button(text='Submit', color=color.azure, on_click= inStore),
-        #Slider(),
-        #Slider(),
-        #ButtonGroup(('box', 'eslk', 'skffk'))
-        ),
-    )
+#     ),
+# )
+# endStore = WindowPanel(
+#     title='the store',
+#     content=(
+#         Text('Power: ' + str(player.strength)),
+#         Text(' '),
+#         Button(),
+#         Text('Add power' ),
+#         Button('+1', on_click= addPower),
+#         Text('Add moves'),
+#         Button('+10', on_click= addMoves),
+#         Button('Back',on_click = goBack),
+#         Text(' ')
+#         #Text('Store', alignment= 'center'),
+#         #InputField(name='name_field'),
+#         #Button(text='Submit', color=color.azure, on_click= inStore),
+#         #Slider(),
+#         #Slider(),
+#         #ButtonGroup(('box', 'eslk', 'skffk'))
+#         ),
+#     )
 
 wp = WindowPanel(
     title='Store',
@@ -299,7 +309,54 @@ addMovesTxt = wp.content[5]
 powerText = wp.content[3]
 powerText.origin = (-1.9,.9)
 addMovesTxt.origin = (-1.9,.9)
+checkSave1 = False
+checkSave2 = False
+checkSave3 = False
 
+def checkedSave1():
+    global checkSave1
+    global checkSave2
+    global checkSave3
+    checkSave1 = True
+    checkSave2 = False
+    checkSave3 = False
+    saveButton1.color = color.blue
+    saveButton2.color = color.azure
+    saveButton3.color = color.azure
+    saveGame()
+def checkedSave2():
+    global checkSave1
+    global checkSave2
+    global checkSave3
+    checkSave2 = True
+    checkSave1 = False
+    checkSave3 = False
+    saveButton2.color = color.blue
+    saveButton1.color = color.azure
+    saveButton3.color = color.azure
+    saveGame()
+def checkedSave3():
+    global checkSave1
+    global checkSave2
+    global checkSave3
+    checkSave3 = True
+    checkSave1 = False
+    checkSave2 = False
+    saveButton3.color = color.blue
+    saveButton2.color = color.azure
+    saveButton1.color = color.azure
+    saveGame()
+def saveGame():
+    global f
+    global checkSave1
+    global checkSave2
+    global checkSave3
+    print(checkSave1)
+    print(checkSave2)
+    print(checkSave3)
+    if checkSave1 == True:
+        print()
+  
 menu = WindowPanel(
     title='Menu',
     content=(
@@ -307,15 +364,21 @@ menu = WindowPanel(
         Button('Continue', on_click= closeMenu),
         Button('Store', on_click= inStore),
         Button('Restart', on_click = restart),
-        Button('Exit', on_click=application.quit),
+        Button('Exit', on_click=app.closeWindow),
         Text(' ')
         
         
     ),
 )
+menuButton1 = menu.content[1]
+menuButton2 = menu.content[2]
+menuButton3 = menu.content[3]
+menuButton4 = menu.content[4]
 menuButton = Button('Menu', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, .45), on_click = openMenu) 
-
-wp.z = 1
+saveButton1 = Button('Save 1', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.3), on_click = checkedSave1)    
+saveButton2 = Button('Save 2', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.36), on_click = checkedSave2) 
+saveButton3 = Button('Save 3', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.42), on_click = checkedSave3) 
+wp.z = 0
 wp.visible = False
 wp.disabled = True
 wp.color = color.azure/.8
@@ -323,28 +386,13 @@ wp.panel.color = color.azure
 wp.highlight_color = wp.color
 wp.text_color = color.white
 wp.position = (0,.25)
-menu.z = -4
+menu.z = 0
 menu.visible = False
 menu.disabled = True
 menu.color = color.azure/.8
 menu.panel.color = color.azure
 menu.highlight_color = menu.color
-dayEndMenu.visible = False
-dayEndMenu.disabled = True
-dayEndMenu.color = color.azure/.8
-dayEndMenu.panel.color = color.azure
-dayEndMenu.highlight_color = dayEndMenu.color
-dayEndMenu.text_color = color.white
-dayEndMenu.position = (0,.25)
-endStore.visible = False
-endStore.disabled = True
-endStore.color = color.azure/.8
-endStore.panel.color = color.azure
-endStore.highlight_color = dayEndMenu.color
-endStore.text_color = color.white
-endStore.position = (0,.25)
-dayEndMenu.z = -6
-endStore.z -5
+
 storeButton = menu.content[2]
 storeButton.highlight_color = addButton.color.tint(.2)
 
@@ -634,7 +682,7 @@ def update():
     menu.stop_dragging()
     ui.text = 'Score: ' + str(score)
     currentMoney.text = str(score)
-    dayEndMenu.stop_dragging()
+    
     wp.stop_dragging()
     global generationStage
     if player.y <= camera.position.y:
