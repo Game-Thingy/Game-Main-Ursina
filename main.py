@@ -18,8 +18,10 @@ with open('saves/slot1.yml', 'r') as fileread:
 
 app = Ursina()
 # Window Setup
-window.fps_counter.enabled = True
+window.fps_counter.enabled = False
 window.exit_button.visible = False
+window.cog_button.visible = False
+window.cog_button.enabled = False
 window.borderless = False
 camera.position = Vec3(-5, 2, -35)
 last_time = time.time()
@@ -30,6 +32,34 @@ mapy = 100
 canMove = False
 score = savesread['Score']
 interactiveSpot = False
+class SaveButton(Button):
+    def __init__(self,name='Save', posx = -.3):
+        super().__init__()
+        self.model = 'cube'
+        self.scale_y = .05
+        self.color = color.azure
+        self.scale_x = .25
+        self.position = (.70,posx)
+        self.text = name
+    def input(self, key):
+            if self.disabled or not self.model:
+                return
+
+            if key == 'left mouse down':
+                if self.hovered:
+                    self.model.setColorScale(self.pressed_color)
+                    self.model.setScale(Vec3(self.pressed_scale, self.pressed_scale, 1))
+
+            if key == 'left mouse up':
+                if self.hovered:
+                    self.model.setColorScale(self.highlight_color)
+                    self.model.setScale(Vec3(self.highlight_scale, self.highlight_scale, 1))
+                else:
+                    self.model.setColorScale(self.color)
+                    self.model.setScale(Vec3(1,1,1))
+            if key == 'right mouse down':
+                if self.hovered:
+                    print("Hello")
 
 class StartScreen(Sprite):
     def __init__(self):
@@ -45,11 +75,20 @@ class StartScreen(Sprite):
         self.startButton.on_click = self.startGame
         self.onStart = True
         
+        
     def startGame(self):
         self.onStart = False
         destroy(self)
         destroy(self.background)
         destroy(self.startButton)
+        saveButton1.visible = False
+        saveButton1.disabled = True
+        saveButton2.visible = False
+        saveButton2.disabled = True
+        saveButton3.visible = False
+        saveButton3.disabled = True
+        menuButton.visible = True
+        menuButton.disabled = False
 class Tool(Entity):
     def __init__(self):
         super().__init__()
@@ -60,6 +99,7 @@ class Tool(Entity):
     def update(self):
         if startScreen.onStart == False:
             self.visible = True
+
 
 class UI(Text):
     def __init__(self):
@@ -86,6 +126,8 @@ class Player(Entity):
         self.origin_y = 0
         self.moves = savesread['MaxMoves']
         self.strength = savesread['Strength']
+        self.strengthprice = 10
+        self.movePrice = 10
         self.disMove = Text(text=self.moves, wordwrap=30)
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -188,8 +230,7 @@ def resetMenu():
     
     menuButton1.text = 'Continue'
     menuButton1.on_click = closeMenu
-    menuButton2.text = 'Store'
-    menuButton2.on_click = inStore
+
     menuButton3.text = 'Restart'
     menuButton3.on_click = restart
     menuButton4.text = 'Exit'
@@ -242,6 +283,7 @@ def saveGame():
     file.close()
 def dayEnd():
     openMenu()
+    storeButton.disabled = False
     menuButton1.text = 'Go to next Day'
     menuButton1.on_click = restart
     menuButton3.text = 'Exit'
@@ -281,15 +323,16 @@ def dayEnd():
 #     )
 
 wp = WindowPanel(
+    
     title='Store',
     content=(
         Text('Power: ' + str(player.strength)),
         Text(' '),
         Button(),
-        Text('Add power' ),
-        Button('+1', on_click= addPower),
-        Text('Add moves'),
-        Button('+10', on_click= addMoves),
+        Text('+1 Strength' ),
+        Button(str(player.strengthprice), on_click= addPower),
+        Text('+5 Moves'),
+        Button((str(player.movePrice)), on_click= addMoves),
         Button('Back',on_click = goBack),
         Text(' ')
         #Text('Store', alignment= 'center'),
@@ -380,13 +423,15 @@ menu = WindowPanel(
 )
 
 menuButton1 = menu.content[1]
-menuButton2 = menu.content[2]
+
 menuButton3 = menu.content[3]
 menuButton4 = menu.content[4]
 menuButton = Button('Menu', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, .45), on_click = openMenu) 
-saveButton1 = Button('Save 1', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.3), on_click = checkedSave1)    
+saveButton1 = SaveButton('Save 1',-.3)   
+saveButton1.on_click = checkedSave1
 saveButton2 = Button('Save 2', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.36), on_click = checkedSave2) 
 saveButton3 = Button('Save 3', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.42), on_click = checkedSave3) 
+checkedSave1()
 wp.z = 0
 wp.visible = False
 wp.disabled = True
@@ -665,12 +710,15 @@ def update():
         ui2.visible = True
         uiDay.visible = True
         canMove = True
+    else:
+        menuButton.visible = False
+        menuButton.disabled = True
     if storeButton.disabled == True:
         displayClosed()
-    if player.y == 1:
-        menu.content[2].disabled = False
+    if player.y == 1 or player.moves == 0:
+        storeButton.disabled = False
     else:
-        menu.content[2].disabled = True
+        storeButton.disabled = True
     if score <= 0:
         addMovesBtn.disabled = True
         addButton.disabled = True
@@ -685,6 +733,8 @@ def update():
         addButton.disabled = False
         addMovesBtn.disabled = False
     if menu.visible == True or player.moves == 0:
+        canMove = False
+    if wp.visible == True:
         canMove = False
     ui2.text = 'Moves: ' + str(player.moves)
     uiDay.text = "Day: " + str(player.day)
