@@ -11,6 +11,10 @@ import random
 from ursina import Ursina, ButtonGroup
 import time
 import sprites
+import yaml
+
+with open('saves/slot1.yml', 'r') as fileread:
+    savesread = yaml.safe_load(fileread)
 
 app = Ursina()
 # Window Setup
@@ -24,7 +28,7 @@ last_time = time.time()
 mapx = 10
 mapy = 100
 canMove = False
-score = 0
+score = savesread['Score']
 interactiveSpot = False
 class StartScreen(Sprite):
     def __init__(self):
@@ -48,9 +52,6 @@ class StartScreen(Sprite):
 class Tool(Entity):
     def __init__(self):
         super().__init__()
-        #self.model = 'cube'
-        # self.scale = Vec3(.08, .08, 0)
-        # self.texture = 'assets/PlayerSprite'
         self.position = Vec2(-.8,-.4)
         self.toolStrenth = 1
         self.parent = camera.ui
@@ -58,8 +59,6 @@ class Tool(Entity):
     def update(self):
         if startScreen.onStart == False:
             self.visible = True
-
-
 
 class UI(Text):
     def __init__(self):
@@ -81,11 +80,11 @@ class Player(Entity):
 
             }, )
         self.position = Vec3(-9, 1, -.1)
-        self.day = 1
+        self.day = savesread['Day']
         self.origin_x = 0
         self.origin_y = 0
-        self.moves = 5
-        self.strength = 1
+        self.moves = savesread['MaxMoves']
+        self.strength = savesread['Strength']
         self.disMove = Text(text=self.moves, wordwrap=30)
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -99,7 +98,6 @@ class Player(Entity):
                     self.playerAnimate.state = 'walkLeft'
                     checkblock(movement = "left")
                     checkblank(movement= "left")
-
             elif held_keys['d']:
                 if last_time + 0.25 <= time.time():
                     last_time = time.time()
@@ -134,10 +132,10 @@ uiDay.position = Vec3(.4,.45,0)
 def disableButton(disButton):
     disButton.disabled = True
     disButton.visible = False
+
 def enableButton(enButton):
     enButton.disabled = False
     enButton.visible = True
-
 
 def inStore():
     print("You are in the store")
@@ -152,6 +150,7 @@ def inStore2():
 def goBack2():
     disableButton(endStore)
     enableButton(dayEndMenu)
+
 def goBack():
     disableButton(wp)
     enableButton(menu)
@@ -159,11 +158,12 @@ def goBack():
 def openMenu():
     menu.visible = True
     menu.disabled = False
+
 def addMoves():
     global score
     player.moves += 10
     score -= 5
-
+    saveGame()
 
 def addPower():
     global powerText
@@ -178,20 +178,21 @@ def addPower():
     powerToolTip.scale_y = 15
     powerToolTip.fade_out(duration=1)
     powerToolTip.background.fade_out(duration=1)
+    saveGame()
 
 def closeMenu():
     menu.disabled = True
     menu.visible = False
 
-
 def dayEnd():
     dayEndMenu.visible = True
     dayEndMenu.disabled = False
+
 def restart():
     dayEndMenu.visible = False
     dayEndMenu.disabled = True
     player.position = Vec3(-9, 1, -.1)
-    player.moves = 25
+    player.moves = savesread['MaxMoves']
     camera.position = Vec3(-5, -3, -35)
     player.day += 1
     global tiles
@@ -216,6 +217,19 @@ def restart():
     generateBlocks(-25, 25, 50, 40, 2, 1, 0, 0) #Generates Stone, Ore, and Iron Mix. Y Levels 25-50 
     generateBlocks(-50, 50, 100, 40, 3, 2, 1, 0) #Generates Stone, Ore, Iron, and Gold Mix. Y Levels 50-100
     generationStage = 100
+    saveGame()
+
+def saveGame():
+    with open('saves/slot1.yml') as file:
+        saves = yaml.safe_load(file)
+    saves['Score'] = score
+    saves['Day'] = player.day
+    saves['MaxMoves'] = player.moves
+    saves['Strength'] = player.strength
+    with open('saves/slot1.yml', 'w') as file:
+        yaml.dump(saves, file)
+    file.close()
+
 dayEndMenu = WindowPanel(
     title='Day Over',
     content=(
@@ -333,6 +347,7 @@ dayEndMenu.z = -6
 endStore.z -5
 storeButton = menu.content[2]
 storeButton.highlight_color = addButton.color.tint(.2)
+
 def displayClosed():
         storeClosed =Tooltip('Store is Closed')
         storeClosed.parent = storeButton
@@ -346,10 +361,6 @@ def displayClosed():
 
 menu.text_color = color.white
 menu.position = (0,.25)
-#print(wp.content[5].value)
-
-
-
 
 
 blocks = [
@@ -359,12 +370,9 @@ blocks = [
     'silverore',
     'gold',
 ]
-
 tiles =[
 
-
 ]
-
 backgroundtiles =[
 
 ]
@@ -388,9 +396,6 @@ for x in range(100):
 
 #Add Other Backgrounds the further they go down
        
-    
-
-
 
 # Generation function. Call the function with the below variables and it will generate the mine.
 # If you don't want a tile to generate set weight as 0. You need all the weights of
@@ -446,7 +451,6 @@ def mineshaft (posx, posy):
    print("Mineshaft generation started")
    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
 
-
 def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
     i = 0
     j = 0
@@ -481,6 +485,7 @@ def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
                         break
         i += 2
         j += 1
+
 def structureblockgen(block, newblock, posx, posy, xoffset, yoffset):
     removedTiles.append(block)
     tiles.remove(block)
@@ -505,30 +510,25 @@ def checkblock(movement):
     for block in tiles:
         if player.x == block.x and player.y == block.y +1 and movement == "down":
             checkStrength(block, movement)
-            print('Block Below!')
             break
         elif player.y == block.y and player.x == block.x +1 and movement == "left":
             checkStrength(block, movement)
-            print('Block Left!')
             break
         elif player.y == block.y and player.x == block.x -1 and movement == "right":
             checkStrength(block, movement)
-            print('Block Right!')
             break
 
 def checkblank(movement):
         for block in removedTiles:
             if player.x == block.x and player.y == block.y +1 and movement == "down":
-                print('Can Move Back')
                 break
             elif player.y == block.y and player.x == block.x +1 and movement == "left":
                 player.x -=1
-                print('Can Move Left!')
                 break
             elif player.y == block.y and player.x == block.x -1 and movement == "right":
                 player.x += 1
-                print('Can Move Right!')
                 break
+
 def checkinteractive():
         for block in interactiveTiles:
             global interactiveSpot
@@ -549,11 +549,9 @@ def checkStrength(block, movement):
         if player.moves <= 0:
             dayEnd()
         blockPay(block)
-        print(block.name + ' Block Breakable')
         tiles.remove(block)
     elif player.strength >= block.strength and movement == "left":
         block.visible = False
-        #playAnimation('assets/Player left', block.x, block.y, player)
         player.x -=1
         player.moves -= 1
         if player.moves <= 0:
@@ -562,7 +560,6 @@ def checkStrength(block, movement):
         tiles.remove(block)
         removedTiles.append(block)
         interactiveTiles.append(block)
-        print(block.name + ' Block Breakable')
     elif player.strength >= block.strength and movement == "right":
         block.visible = False
         player.x +=1
@@ -570,11 +567,9 @@ def checkStrength(block, movement):
         if player.moves <= 0:
             dayEnd()
         blockPay(block)
-        print(block.name + ' Block Breakable')
         tiles.remove(block)
         removedTiles.append(block)
     else:
-        print("Can't Break That")
         tip =Tooltip('Can\'t Break this')
         tip.parent = player
         tip.position = (0,1,-1)
@@ -582,7 +577,6 @@ def checkStrength(block, movement):
         tip.fade_out(duration=1)
         tip.background.fade_out(duration=1)
         
-
 def blockPay(block):
     global score
     match block.name:
@@ -592,8 +586,7 @@ def blockPay(block):
             updateScore(block.price)
         case "silver_ore":
             updateScore(block.price)
-
-        
+       
 def updateScore(oreprice):
     global score
     score += oreprice
@@ -601,9 +594,6 @@ def updateScore(oreprice):
 
 def updatePosition():
     ui.text = f'Position: {player.x} {player.y}'
-    print(f'{player.x} {player.y}')
-
-
 
 
 # Updates the Camera Position if the Players position is Equal 
@@ -613,23 +603,17 @@ def update():
     global canMove
     global currentMoney
     global score
-    
     if startScreen.onStart == False:
         ui.visible = True
         ui2.visible = True
         uiDay.visible = True
         canMove = True
-    
     if storeButton.disabled == True:
         displayClosed()
     if player.y == 1:
         menu.content[2].disabled = False
-        
-
     else:
         menu.content[2].disabled = True
-
-
     if score <= 0:
         addMovesBtn.disabled = True
         addButton.disabled = True
@@ -640,14 +624,11 @@ def update():
         noMoney.scale_y = 15
         noMoney.fade_out(duration=1)
         noMoney.background.fade_out(duration=1)
-        
     else:
         addButton.disabled = False
         addMovesBtn.disabled = False
-
     if menu.visible == True or player.moves == 0:
         canMove = False
-    
     ui2.text = 'Moves: ' + str(player.moves)
     uiDay.text = "Day: " + str(player.day)
     menu.stop_dragging()
@@ -655,18 +636,15 @@ def update():
     currentMoney.text = str(score)
     dayEndMenu.stop_dragging()
     wp.stop_dragging()
-
     global generationStage
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
     if player.y <= -50 and generationStage in range(100,150):
         generateBlocks(-generationStage, generationStage, generationStage + 1, 10, 3, 2, 1, 1)
         generationStage += 1
-        print(f"Did the Thing {generationStage}")
     if player.y <= -100 and generationStage in range(150,200):
         generateBlocks(-generationStage, generationStage, generationStage + 1, 5, 10, 2, 1, 1)
         generationStage += 1
-        print(f"Did the Thing v2 {generationStage}")
     # if interactiveSpot == True:
     #     tip =Tooltip('E')
     #     tip.parent = player
@@ -675,7 +653,6 @@ def update():
     for block in removedTiles:
         if player.x == block.x and player.y == block.y +1:
             player.y -=1
-            print('Gravity!')
             break
     
 
