@@ -18,6 +18,8 @@ with open('saves/slot1.yml', 'r') as fileread:
 
 app = Ursina()
 # Window Setup
+
+
 window.fps_counter.enabled = False
 window.exit_button.visible = False
 window.cog_button.visible = False
@@ -198,6 +200,7 @@ class Player(Entity):
 startScreen = StartScreen()
 
 #Game Objects
+
 player = Player()
 topBackground = sprites.TopBackground()
 tool = Tool()
@@ -207,6 +210,7 @@ ui2 = UI()
 ui2.position = Vec3(-.5,.45, 0)
 uiDay = UI()
 uiDay.position = Vec3(.4,.45,0)
+
 #Pause Menu
 def delete():
     global windowsOpen
@@ -427,6 +431,8 @@ def checkedSave1():
     saveButton1.color = color.blue
     saveButton2.color = color.azure
     saveButton3.color = color.azure
+    saveButton2.clicked = False
+    saveButton3.clicked = False
     saveGame()
 def checkedSave2():
     global checkSave1
@@ -438,6 +444,8 @@ def checkedSave2():
     saveButton2.color = color.blue
     saveButton1.color = color.azure
     saveButton3.color = color.azure
+    saveButton1.clicked = False
+    saveButton3.clicked = False
     print('Changed to save 2')
     saveGame()
 def checkedSave3():
@@ -450,6 +458,8 @@ def checkedSave3():
     saveButton3.color = color.blue
     saveButton2.color = color.azure
     saveButton1.color = color.azure
+    saveButton1.clicked = False
+    saveButton2.clicked = False
     saveGame()
 # def saveGame():
 #     global f
