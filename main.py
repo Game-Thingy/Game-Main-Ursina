@@ -25,8 +25,8 @@ window.cog_button.enabled = False
 window.borderless = False
 camera.position = Vec3(-5, 2, -35)
 last_time = time.time()
-
-
+confirm = None
+windowsOpen = 0
 mapx = 10
 mapy = 100
 canMove = False
@@ -41,7 +41,11 @@ class SaveButton(Button):
         self.scale_x = .25
         self.position = (.70,posx)
         self.text = name
+
+    
     def input(self, key):
+            global windowsOpen
+            global confirm
             if self.disabled or not self.model:
                 return
 
@@ -59,7 +63,26 @@ class SaveButton(Button):
                     self.model.setScale(Vec3(1,1,1))
             if key == 'right mouse down':
                 if self.hovered:
-                    print("Hello")
+                   
+                    try: 
+                        if windowsOpen <= 0:
+                            windowsOpen += 1
+                            startScreen.startButton.enabled = False
+                            confirm = WindowPanel(
+                                title = '',
+                                content=(
+                                    Text(''),
+                                    Text('Are you sure you want to delete save?'),
+                                    Text(''),
+                                    Button('Yes', on_click=delete),
+                                    Button('No', on_click=deleteWindow)
+                                ),
+                            )
+                            confirm.z = -5
+                            
+                            print("Hello")
+                    except:
+                        print('Can not delete')
 
 class StartScreen(Sprite):
     def __init__(self):
@@ -89,6 +112,8 @@ class StartScreen(Sprite):
         saveButton3.disabled = True
         menuButton.visible = True
         menuButton.disabled = False
+        eraseText.visible = False
+        chooseText.visible = False
 class Tool(Entity):
     def __init__(self):
         super().__init__()
@@ -160,6 +185,7 @@ class Player(Entity):
 
 
 startScreen = StartScreen()
+
 #Game Objects
 player = Player()
 topBackground = sprites.TopBackground()
@@ -171,6 +197,21 @@ ui2.position = Vec3(-.5,.45, 0)
 uiDay = UI()
 uiDay.position = Vec3(.4,.45,0)
 #Pause Menu
+def delete():
+    global windowsOpen
+    global confirm
+    startScreen.startButton.enabled = True
+    print("Deleted")
+    windowsOpen = 0
+    destroy(confirm)
+
+def deleteWindow():
+    global windowsOpen
+    global confirm
+    startScreen.startButton.enabled = True
+    print('Nothing deleted')
+    windowsOpen = 0
+    destroy(confirm)
 
 def disableButton(disButton):
     disButton.disabled = True
@@ -427,11 +468,24 @@ menuButton1 = menu.content[1]
 menuButton3 = menu.content[3]
 menuButton4 = menu.content[4]
 menuButton = Button('Menu', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, .45), on_click = openMenu) 
+chooseText = Text(
+    'Choose a save',
+    color = color.white,
+    position =  (.61, -.23, -5)
+)
+eraseText = Text(
+    'Right click to erase save',
+    color = color.white,
+    position =  (.56, -.47, -5)
+)
 saveButton1 = SaveButton('Save 1',-.3)   
 saveButton1.on_click = checkedSave1
-saveButton2 = Button('Save 2', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.36), on_click = checkedSave2) 
-saveButton3 = Button('Save 3', scale_y = .05, color =color.azure , scale_x = .25, position = (.70, -.42), on_click = checkedSave3) 
+saveButton2 = SaveButton('Save 2', -.36)
+saveButton2.on_click = checkedSave2
+saveButton3 = SaveButton('Save 3', -.42) 
+saveButton3.on_click = checkedSave3
 checkedSave1()
+
 wp.z = 0
 wp.visible = False
 wp.disabled = True
