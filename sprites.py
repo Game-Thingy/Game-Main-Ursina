@@ -137,3 +137,73 @@ class Minecart(Entity):
         self.scale = Vec3(1, 1, 0)
         self.z = 0
         self.texture = 'assets/Minecart'
+
+class TreeLeft(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.texture = 'assets/treeleft'
+
+class TreeRight(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.texture = 'assets/treeright'
+
+class JungleLeaf(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.texture = 'assets/jungle_leaf'
+
+class JungleBush(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.texture = 'assets/jungle_bush'
+
+class JungleVine(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.texture = 'assets/jungle_vine'   
+
+class Log(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.texture = 'assets/log'  
+
+class Lilac(Entity):
+    def __init__(self, x = 0, y = 0):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.model = 'cube'
+        self.scale = Vec3(1, 1, 0)
+        self.z = 0
+        self.texture = 'assets/lilac'  

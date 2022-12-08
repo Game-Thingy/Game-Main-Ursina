@@ -13,8 +13,15 @@ import time
 import sprites
 import yaml
 
+saveslot = 'saves/slot1.yml'
 with open('saves/slot1.yml', 'r') as fileread:
-    savesread = yaml.safe_load(fileread)
+        savesread = yaml.safe_load(fileread)
+
+def openfileRead():
+    global savesread
+    global fileread
+    with open(saveslot, 'r') as fileread:
+        savesread = yaml.safe_load(fileread)
 
 app = Ursina()
 # Window Setup
@@ -93,7 +100,7 @@ class SaveButton(Button):
                             )
                             confirm.z = -5
                             
-                            print("Hello")
+                            print(saveslot)
                     except:
                         print('Can not delete')
 
@@ -162,6 +169,7 @@ class Player(Entity):
         self.day = savesread['Day']
         self.origin_x = 0
         self.origin_y = 0
+        self.maxmoves = savesread['MaxMoves']
         self.moves = savesread['MaxMoves']
         self.strength = savesread['Strength']
         self.strengthprice = 10
@@ -215,8 +223,19 @@ uiDay.position = Vec3(.4,.45,0)
 def delete():
     global windowsOpen
     global confirm
+    global savesread
     startScreen.startButton.enabled = True
-
+    with open(saveslot) as deletefile:
+        saves = yaml.safe_load(deletefile)
+    saves['Score'] = 0
+    saves['Day'] = 1
+    saves['MaxMoves'] = 25
+    saves['Strength'] = 1
+    with open(saveslot, 'w') as deletefile:
+        yaml.dump(saves, deletefile)
+    deletefile.close()
+    openfileRead()
+    reloadsavedata()
     print("Deleted")
     windowsOpen = 0
     destroy(confirm)
@@ -260,6 +279,7 @@ def openMenu():
     
 def addMoves():
     global score
+    player.maxmoves += 10
     player.moves += 10
     score -= 5
     saveGame()
@@ -268,7 +288,8 @@ def addPower():
     global powerText
     global score
     player.strength += 1
-    score -= 5
+    score -= 10
+    # int(100 * (1 + 0.75 * float(savesread['Strength'])) * (1.15 ** float(savesread['Strength'])))
     power.text = 'Power: ' + str(player.strength)
     powerToolTip = Tooltip('Power up!')
     powerToolTip.parent = addButton
@@ -329,15 +350,27 @@ def restart():
 
 def saveGame():
     print('in save game function')
-    with open('saves/slot1.yml') as file:
+    with open(saveslot) as file:
         saves = yaml.safe_load(file)
     saves['Score'] = score
     saves['Day'] = player.day
-    saves['MaxMoves'] = player.moves
+    saves['MaxMoves'] = player.maxmoves
     saves['Strength'] = player.strength
-    with open('saves/slot1.yml', 'w') as file:
+    with open(saveslot, 'w') as file:
         yaml.dump(saves, file)
     file.close()
+    fileread.close()
+    openfileRead()
+
+def reloadsavedata():
+    global score
+    score = savesread['Score']
+    player.day = savesread['Day']
+    player.maxmoves = savesread['MaxMoves']
+    player.moves = player.maxmoves
+    player.strength = savesread['Strength']
+    print("Reloaded Save DATA I SWEAR TO GO IF YOU DON'T YOU WILL REGRET IT")
+
 def dayEnd():
     openMenu()
     storeButton.disabled = False
@@ -347,37 +380,6 @@ def dayEnd():
     menuButton3.on_click = app.closeWindow
     menuButton4.disabled = True
     menuButton4.visible = False
-# dayEndMenu = WindowPanel(
-#     title='Day Over',
-#     content=(
-#         Text(' '),
-#         Button('Continue', on_click= restart),
-#         Button('Store', on_click=inStore2),
-#         Text(' ')
-        
-        
-#     ),
-# )
-# endStore = WindowPanel(
-#     title='the store',
-#     content=(
-#         Text('Power: ' + str(player.strength)),
-#         Text(' '),
-#         Button(),
-#         Text('Add power' ),
-#         Button('+1', on_click= addPower),
-#         Text('Add moves'),
-#         Button('+10', on_click= addMoves),
-#         Button('Back',on_click = goBack),
-#         Text(' ')
-#         #Text('Store', alignment= 'center'),
-#         #InputField(name='name_field'),
-#         #Button(text='Submit', color=color.azure, on_click= inStore),
-#         #Slider(),
-#         #Slider(),
-#         #ButtonGroup(('box', 'eslk', 'skffk'))
-#         ),
-#     )
 
 wp = WindowPanel(
     
@@ -417,30 +419,23 @@ addMovesTxt = wp.content[5]
 powerText = wp.content[3]
 powerText.origin = (-1.9,.9)
 addMovesTxt.origin = (-1.9,.9)
-checkSave1 = False
-checkSave2 = False
-checkSave3 = False
 
 def checkedSave1():
-    global checkSave1
-    global checkSave2
-    global checkSave3
-    checkSave1 = True
-    checkSave2 = False
-    checkSave3 = False
+    global saveslot
+    global fileread
     saveButton1.color = color.blue
     saveButton2.color = color.azure
     saveButton3.color = color.azure
     saveButton2.clicked = False
     saveButton3.clicked = False
     saveGame()
+    fileread.close()
+    saveslot = 'saves/slot1.yml'
+    openfileRead()
+    reloadsavedata()
 def checkedSave2():
-    global checkSave1
-    global checkSave2
-    global checkSave3
-    checkSave2 = True
-    checkSave1 = False
-    checkSave3 = False
+    global saveslot
+    global fileread
     saveButton2.color = color.blue
     saveButton1.color = color.azure
     saveButton3.color = color.azure
@@ -448,29 +443,23 @@ def checkedSave2():
     saveButton3.clicked = False
     print('Changed to save 2')
     saveGame()
+    fileread.close()
+    saveslot = 'saves/slot2.yml'
+    openfileRead()
+    reloadsavedata()
 def checkedSave3():
-    global checkSave1
-    global checkSave2
-    global checkSave3
-    checkSave3 = True
-    checkSave1 = False
-    checkSave2 = False
+    global saveslot
+    global fileread
     saveButton3.color = color.blue
     saveButton2.color = color.azure
     saveButton1.color = color.azure
     saveButton1.clicked = False
     saveButton2.clicked = False
     saveGame()
-# def saveGame():
-#     global f
-#     global checkSave1
-#     global checkSave2
-#     global checkSave3
-#     print(checkSave1)
-#     print(checkSave2)
-#     print(checkSave3)
-#     if checkSave1 == True:
-#         print()
+    fileread.close()
+    saveslot = 'saves/slot3.yml'
+    openfileRead()
+    reloadsavedata()
   
 menu = WindowPanel(
     title='Menu',
@@ -509,6 +498,7 @@ saveButton3 = SaveButton('Save 3', -.42)
 saveButton3.on_click = checkedSave3
 checkedSave1()
 saveButton1.clicked = True
+#Doesn't pull data from yaml files yet.
 wp.z = 0
 wp.visible = False
 wp.disabled = True
@@ -610,25 +600,49 @@ generateBlocks(-25, 25, 50, 40, 2, 1, 0, 0) #Generates Stone, Ore, and Iron Mix.
 generateBlocks(-50, 50, 100, 40, 3, 2, 1, 0) #Generates Stone, Ore, Iron, and Gold Mix. Y Levels 50-100
 generationStage = 100
 
+def generateStructures(yrange, yrange2):
+    for x in range(int(yrange / 15), int((yrange2 - 15) / 15)):
+        doGeneration = random.randrange(1,3)
+        if doGeneration == 1:
+            chooseGeneration = random.randrange(1,5)
+            if chooseGeneration == 1:
+                chestroom(-x * 15)
+            if chooseGeneration == 2:
+                caveroomthatislegitjustairbecauseheislazyaf(-x * 15)
+            if chooseGeneration == 3:
+                mineshaft(-x * 15)
+            if chooseGeneration == 4:
+                jungle(-x * 15)
+
 #Structure Generation, simply call the method of structure you want to generate and where
 #Example: chestroom(3, -24)
-def chestroom (posx, posy):
+def chestroom (posy):
+   posx = random.randrange(-7,-3)
    structurelayout = ["air", "air", "air", "air", "air", "air", "air", "chest", "air"]
    structureoffsets = [-1, 1, 0, 1, 1, 1, -1, 0, 0, 0, 1, 0, 1, -1, 0, -1, -1, -1]
    print("Chest Room generation started")
    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
 
-def caveroomthatislegitjustairbecauseheislazyaf (posx, posy):
-   structurelayout = ["air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air"]    
-   structureoffsets = [0,2,1,2,2,2,-2,1,-1,1,0,1,1,1,2,1,3,1,-4,0,-3,0,-2,0,-1,0,0,0,1,0,2,0,3,0,4,0,-4,-1,-3,-1,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,4,-1,-4,-2,-3,-2,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-3,4,-4]
+def caveroomthatislegitjustairbecauseheislazyaf (posy):
+   posx = random.randrange(-6,-4)
+   structurelayout = ["air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air","air"]    
+   structureoffsets = [0,1,1,1,2,1,-1,0,0,0,1,0,2,0,3,0,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-2]
    print("Cave room that is legit just air because he is lazy af generation started")
    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
 
-def mineshaft (posx, posy):
+def mineshaft (posy):
+   posx = int(-5)
    structurelayout = ["air","stalactite","air","air","air","air","air","air","air","air","air","air","shaftplank","shaftplank","shaftplank","shaftplank","air","air","air","air","shaftsupport","air","air","shaftsupport","air","air","rail","rail","shaftsupport","chest","air","shaftsupport","air","minecart"]
    structureoffsets = [-1,2,0,2,1,2,2,2,-2,1,-1,1,0,1,1,1,2,1,3,1,-3,0,-2,0,-1,0,0,0,1,0,2,0,3,0,4,0,-3,-1,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,4,-1,-3,-2,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-2,4,-2]
    print("Mineshaft generation started")
    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
+
+def jungle (posy):
+    posx = int(-5)
+    structurelayout = ["air","air","air","air","air","air","air","air","stalactite","stalactite","air","treeleft","jungle_leaf","treeright","air","air","air","air","air","jungle_leaf","jungle_leaf","jungle_leaf","air","air","air","air","air","air","log","vine","air","air","air","lilac","jungle_bush","air","log","vine","air","jungle_bush","jungle_bush"]
+    structureoffsets = [-1,2,0,2,1,2,-2,1,-1,1,0,1,1,1,2,1,3,1,-3,0,-2,0,-1,0,0,0,1,0,2,0,3,0,4,0,-3,-1,-2,-1,-1,-1,0,-1,1,-1,2,-1,3,-1,4,-1,-3,-2,-2,-2,-1,-2,0,-2,1,-2,2,-2,3,-2,4,-2,-3,-3,-2,-3,1,-3,0,-3,1,-3,2,-3,3,-3,4,-3]
+    print("Jungle generation started")
+    structuretilegenerator(posx, posy, structurelayout, structureoffsets)
 
 def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
     i = 0
@@ -662,6 +676,27 @@ def structuretilegenerator (posx, posy, structurelayout, structureoffsets):
                     case "minecart":
                         structureblockgenbackground(block, sprites.Minecart, posx, posy, xoffset, yoffset)
                         break
+                    case "treeleft":
+                        structureblockgenbackground(block, sprites.TreeLeft, posx, posy, xoffset, yoffset)
+                        break
+                    case "treeright":
+                        structureblockgenbackground(block, sprites.TreeRight, posx, posy, xoffset, yoffset)
+                        break
+                    case "jungle_leaf":
+                        structureblockgenbackground(block, sprites.JungleLeaf, posx, posy, xoffset, yoffset)
+                        break
+                    case "jungle_bush":
+                        structureblockgenbackground(block, sprites.JungleBush, posx, posy, xoffset, yoffset)
+                        break
+                    case "vine":
+                        structureblockgenbackground(block, sprites.JungleVine, posx, posy, xoffset, yoffset)
+                        break
+                    case "log":
+                        structureblockgenbackground(block, sprites.Log, posx, posy, xoffset, yoffset)
+                        break
+                    case "lilac":
+                        structureblockgenbackground(block, sprites.Lilac, posx, posy, xoffset, yoffset)
+                        break
         i += 2
         j += 1
 
@@ -683,7 +718,7 @@ def structureblockgenbackground(block, newblock, posx, posy, xoffset, yoffset):
     y = newblock(newx,newy)
     backgroundtiles.append(y)
 
-mineshaft(-5, -5)
+generateStructures(20, 100)
 
 def checkblock(movement):
     for block in tiles:
@@ -824,10 +859,22 @@ def update():
     if player.y <= camera.position.y:
         camera.position = Vec3(-5, camera.position.y - 1, -35)
     if player.y <= -50 and generationStage in range(100,150):
-        generateBlocks(-generationStage, generationStage, generationStage + 1, 10, 3, 2, 1, 1)
+        generateBlocks(-generationStage, generationStage, generationStage + 1, 5, 3, 2, 1, 1)
+        if player.y <= -150 and generationStage == 249:
+            generateStructures(120, 150)
+        print("Did the thing V1")
         generationStage += 1
     if player.y <= -100 and generationStage in range(150,200):
-        generateBlocks(-generationStage, generationStage, generationStage + 1, 5, 10, 2, 1, 1)
+        generateBlocks(-generationStage, generationStage, generationStage + 1, 5, 4, 3, 2, 1)
+        if player.y <= -150 and generationStage == 249:
+            generateStructures(170, 200)
+        print("Did the thing V2")
+        generationStage += 1
+    if player.y <= -150 and generationStage in range(200,250):
+        generateBlocks(-generationStage, generationStage, generationStage + 1, 6, 5, 4, 2, 2)
+        print("Did the thing V3")
+        if player.y <= -150 and generationStage == 249:
+            generateStructures(220, 250)
         generationStage += 1
     # if interactiveSpot == True:
     #     tip =Tooltip('E')

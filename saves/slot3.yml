@@ -1,6 +1,6 @@
-Day: 1
+Day: 3
 LoadedBackground: 1
 LoadedPlayer: 1
-MaxMoves: 25
-Score: 0
-Strength: 1
+MaxMoves: 250
+Score: 500
+Strength: 5
