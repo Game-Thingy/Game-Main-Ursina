@@ -33,7 +33,7 @@ canMove = False
 score = savesread['Score']
 interactiveSpot = False
 class SaveButton(Button):
-    def __init__(self,name='Save', posx = -.3):
+    def __init__(self,name='Save', posx = -.3, clicked = False, saveDay = 1, saveScore = 0):
         super().__init__()
         self.model = 'cube'
         self.scale_y = .05
@@ -41,7 +41,17 @@ class SaveButton(Button):
         self.scale_x = .25
         self.position = (.70,posx)
         self.text = name
+        self.clicked = clicked
+        self.saveDay = saveDay
+        self.saveScore = saveScore
+        self.fileInfo = Text('Day: ' + str(saveDay) + ' Score: ' + str(saveScore),
+            position = (-1.2, .25),
+            scale_x = 3,
+            scale_y = 18
 
+        )
+        self.fileInfo.parent = self
+        
     
     def input(self, key):
             global windowsOpen
@@ -53,6 +63,7 @@ class SaveButton(Button):
                 if self.hovered:
                     self.model.setColorScale(self.pressed_color)
                     self.model.setScale(Vec3(self.pressed_scale, self.pressed_scale, 1))
+                    self.clicked = True
 
             if key == 'left mouse up':
                 if self.hovered:
@@ -61,9 +72,9 @@ class SaveButton(Button):
                 else:
                     self.model.setColorScale(self.color)
                     self.model.setScale(Vec3(1,1,1))
-            if key == 'right mouse down':
+            if key == 'right mouse down' and self.clicked == True:
                 if self.hovered:
-                   
+                    
                     try: 
                         if windowsOpen <= 0:
                             windowsOpen += 1
@@ -201,6 +212,7 @@ def delete():
     global windowsOpen
     global confirm
     startScreen.startButton.enabled = True
+
     print("Deleted")
     windowsOpen = 0
     destroy(confirm)
@@ -426,6 +438,7 @@ def checkedSave2():
     saveButton2.color = color.blue
     saveButton1.color = color.azure
     saveButton3.color = color.azure
+    print('Changed to save 2')
     saveGame()
 def checkedSave3():
     global checkSave1
@@ -474,9 +487,9 @@ chooseText = Text(
     position =  (.61, -.23, -5)
 )
 eraseText = Text(
-    'Right click to erase save',
+    'Click save then right click to erase save',
     color = color.white,
-    position =  (.56, -.47, -5)
+    position =  (.49, -.47, -5)
 )
 saveButton1 = SaveButton('Save 1',-.3)   
 saveButton1.on_click = checkedSave1
@@ -485,7 +498,7 @@ saveButton2.on_click = checkedSave2
 saveButton3 = SaveButton('Save 3', -.42) 
 saveButton3.on_click = checkedSave3
 checkedSave1()
-
+saveButton1.clicked = True
 wp.z = 0
 wp.visible = False
 wp.disabled = True
